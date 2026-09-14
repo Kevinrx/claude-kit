@@ -1,0 +1,2 @@
+# Keep LF everywhere (shell scripts like .claude/gate break with CRLF on Windows checkouts).
+* text=auto eol=lf
