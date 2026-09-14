@@ -1,0 +1,3 @@
+#!/bin/sh
+# kit stop gate for this repo: Claude can't finish with uncommitted changes while this fails.
+node --test "tests/*.test.mjs"

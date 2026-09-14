@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-kit",
+  "description": "Kevin's personal Claude Code kit.",
+  "owner": {
+    "name": "Kevin"
+  },
+  "plugins": [
+    {
+      "name": "kit",
+      "description": "Plan → implement → verify workflow, stack skills (React, Rails, TypeScript, Node), 3 agents and safety hooks.",
+      "source": "./plugins/kit",
+      "category": "development",
+      "tags": ["workflow", "verification", "hooks", "rails", "react"]
+    }
+  ]
+}
