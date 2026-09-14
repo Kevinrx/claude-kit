@@ -1,0 +1,53 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { gitRepo, runHook } from './helpers.mjs';
+
+const context = (dir, extra = {}) => runHook('session-context.mjs', { hook_event_name: 'SessionStart', cwd: dir, ...extra }, { CLAUDE_PROJECT_DIR: dir });
+
+function planRepo() {
+  const dir = gitRepo();
+  writeFileSync(join(dir, 'Gemfile'), "source 'https://rubygems.org'\ngem 'rails', '~> 7.1'\n");
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { react: '^18.0.0' } }));
+  mkdirSync(join(dir, '.claude'));
+  writeFileSync(join(dir, '.claude', 'gate'), 'exit 0\n');
+  mkdirSync(join(dir, 'docs', 'plans', 'discounts'), { recursive: true });
+  writeFileSync(join(dir, 'docs', 'plans', 'discounts', 'PLAN.md'), '# Discounts\n');
+  writeFileSync(join(dir, 'docs', 'plans', 'discounts', 'PROGRESS.md'), 'status: in progress\n## Log\n- step 1 — done — bin/rspec green\n');
+  mkdirSync(join(dir, 'docs', 'plans', 'old'), { recursive: true });
+  writeFileSync(join(dir, 'docs', 'plans', 'old', 'PLAN.md'), '# Old\n');
+  writeFileSync(join(dir, 'docs', 'plans', 'old', 'PROGRESS.md'), 'status: done\n');
+  return dir;
+}
+
+test('session-context reports stack, gate and unfinished plans', () => {
+  const r = context(planRepo());
+  assert.equal(r.code, 0);
+  assert.match(r.stdout, /Git: \S+ — /);
+  assert.match(r.stdout, /Rails, React \(JavaScript\)/);
+  assert.match(r.stdout, /Load kit:stack-rails, kit:stack-react before/);
+  assert.doesNotMatch(r.stdout, /stack-node/);
+  assert.match(r.stdout, /Stop gate active/);
+  assert.match(r.stdout, /docs\/plans\/discounts/);
+  assert.doesNotMatch(r.stdout, /docs\/plans\/old/);
+  assert.doesNotMatch(r.stdout, /step 1 — done/, 'progress tail only after compaction');
+});
+
+test('session-context repeats plan progress after compaction', () => {
+  const r = context(planRepo(), { source: 'compact' });
+  assert.match(r.stdout, /docs\/plans\/discounts\/PROGRESS\.md \(last lines\)/);
+  assert.match(r.stdout, /step 1 — done — bin\/rspec green/);
+});
+
+test('session-context detects stacks in monorepo subdirectories, once per stack', () => {
+  const dir = gitRepo();
+  mkdirSync(join(dir, 'frontend'));
+  writeFileSync(join(dir, 'frontend', 'package.json'), JSON.stringify({ dependencies: { react: '^18.0.0' } }));
+  assert.match(context(dir).stdout, /React \(JavaScript\) \(frontend\/\)\. Load kit:stack-react before/);
+
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { react: '^18.0.0' } }));
+  const out = context(dir).stdout;
+  assert.equal(out.match(/kit:stack-react/g).length, 1);
+  assert.doesNotMatch(out, /frontend\//);
+});

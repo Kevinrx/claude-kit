@@ -28,8 +28,8 @@ Not when you wrote it yourself this session: your own gate run is the evidence. 
 - **L2 Exceptions audit** — searches the diff for `eslint-disable`, `@ts-ignore` / `@ts-expect-error`, `rubocop:disable`, `.skip(` / `.only(` / `xit` / `skip` / `pending`, removed assertions, loosened thresholds, widened types. An unexplained hit is a FAIL.
 - **L3 Red-proof** — each new test must fail without the implementation it covers:
   `node "${CLAUDE_SKILL_DIR}/scripts/red-proof.mjs" --test-cmd "<test command>" <impl files>`
-  Needs a clean tree. Exit 0 = proven; 1 = the test isn't load-bearing (FAIL); 2/3 = usage or setup error, not a verdict.
-- **L4 Adversarial** — only for the risk areas above: try to break it. UI changes need runtime evidence (run it, screenshot, curl).
+  Needs a clean tree and a test command that's green on HEAD; paths are relative to the current directory (on Windows the command runs in cmd.exe — use double quotes). Exit 0 = proven; 1 = the test isn't load-bearing (FAIL); 2/3 = usage or setup error, not a verdict.
+- **L4 Adversarial** — only for the risk areas above: try to break it. UI changes need runtime evidence (run it, screenshot, curl — or spawn `kit:ui-checker` with the expected behavior). For auth/permissions, multi-tenancy or money, also spawn `kit:security-reviewer` on the same diff; its FAIL fails the verification.
 
 ## Steering
 

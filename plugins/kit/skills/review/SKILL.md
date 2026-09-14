@@ -7,8 +7,10 @@ argument-hint: "[base branch | PR number | path]"
 # Review
 
 1. **Scope.** From the argument: a PR (`gh pr diff <n>`), a base branch, or a path. Default: `git diff $(git merge-base HEAD <default branch>)` plus uncommitted changes.
-2. **Who.** Tiny diffs (under ~30 lines) → review inline yourself. Anything bigger → spawn `kit:reviewer` in **review** mode; the fresh context is the point.
-3. **Brief the reviewer** with: the intent (plan, issue, or what I asked for), the exact diff command, the stack (so it loads the `kit:stack-*` skills), and the instruction to report only real issues.
-4. **Present** the verdict and findings grouped by severity, as returned. Offer to fix CRITICAL and MAJOR findings; don't fix anything without asking.
+2. **Who.** Tiny diffs (under ~30 lines) → review inline yourself. Anything bigger → spawn `kit:reviewer` in **review** mode; the fresh context is the point. Add, in parallel:
+   - `kit:security-reviewer` when the diff touches auth, permissions, account/tenant scoping, money, uploads, sessions or new external input.
+   - `kit:reviewer` in **contract** mode when it changes an API endpoint and its frontend consumers (Rails ↔ React).
+3. **Brief each reviewer** with: the intent (plan, issue, or what I asked for), the exact diff command, the stack (so it loads the `kit:stack-*` skills), and the instruction to report only real issues.
+4. **Present** the verdicts and findings grouped by severity, as returned. Offer to fix CRITICAL and MAJOR findings; don't fix anything without asking.
 
-For a heavier multi-agent PR review, the `code-review` plugin (`/code-review`) is also installed.
+Built-ins for other angles: `/security-review` (pending changes), `/simplify` (reuse and cleanup), `/code-review` (multi-agent, PR level).

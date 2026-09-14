@@ -11,6 +11,8 @@ Level: `$ARGUMENTS` (empty → full; `off` → return to normal replies and stop
 
 Stays on for every reply until I say "normal mode" or `/kit:terse off`. No drifting back to long answers after a few turns.
 
+For terse replies that survive compaction and every session, the kit also ships an output style: pick **terse** in `/config` → Output style, or set `"outputStyle": "kit:terse"` in settings (the built-in **Concise** style is a milder option). Say so once if I use this skill often.
+
 ## Rules
 
 - Drop filler (just, really, basically, actually), pleasantries, hedging, and recaps of what I said.

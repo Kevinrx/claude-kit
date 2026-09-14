@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "kit",
-      "description": "Plan → implement → verify workflow, stack skills (React, Rails, TypeScript, Node), 3 agents and safety hooks.",
+      "description": "Plan → implement → verify workflow, stack skills (React, Rails, TypeScript, Node), review, security and implementation agents, and safety hooks.",
       "source": "./plugins/kit",
       "category": "development",
       "tags": ["workflow", "verification", "hooks", "rails", "react"]
