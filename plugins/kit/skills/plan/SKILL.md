@@ -83,6 +83,12 @@ For big or risky plans (more than ~6 steps, or touching auth, money, migrations 
 
 Show the goal line, the steps (one line each) and the open questions. Then stop. Implementation starts only when I say so (`/kit:implement <slug>`).
 
+Also print the unattended variant, ready to paste — `/goal` keeps the session working until an evaluator sees the goal met in the transcript (it can't run commands itself, which is why the goal line names them):
+
+```
+/goal Implement docs/plans/<slug>/PLAN.md with /kit:implement until: <goal line>
+```
+
 ## Red flags
 
 - "`npm test` is standard, it'll exist" → prove it from its source.

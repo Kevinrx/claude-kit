@@ -38,7 +38,7 @@ Done = every step's **done when** holds + the verification gate is green + deleg
    ```
 3. **Gate** after each step. Fail → fix and re-run, **max 3 attempts per step**. Then stop, paste the exact error into `PROGRESS.md`, and tell me.
 4. **Pre-existing failures**: prove it — run the failing command on the base (`git stash` or a worktree). Zero *new* failures is the bar.
-5. **UI steps**: run the app and look at it (browser tools / screenshot) before calling the step done.
+5. **UI steps**: run the app and look at it (browser tools / screenshot) before calling the step done. For a flow with several states to check, spawn `kit:ui-checker` with the URL or start command, the steps and the expected result of each.
 6. Commit the step (if allowed) and append to `PROGRESS.md`: `- <step> — done — <command + result>`.
 
 Never weaken a test, add a skip, or disable a lint/type rule to get green. If a test looks wrong, tell me.

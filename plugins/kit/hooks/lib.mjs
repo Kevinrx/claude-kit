@@ -23,9 +23,16 @@ export function preToolDecision(decision, reason) {
   }));
 }
 
-export function git(cwd, args) {
+// Runs git and returns trimmed stdout, or null on failure. `env` adds variables (e.g. GIT_INDEX_FILE).
+export function git(cwd, args, env) {
   try {
-    return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 16 * 1024 * 1024,
+      ...(env && { env: { ...process.env, ...env } }),
+    }).trim();
   } catch {
     return null;
   }

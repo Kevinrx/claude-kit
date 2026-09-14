@@ -1,5 +1,5 @@
 {
-  "description": "kit safety hooks: destructive-command guard, test/secret guard on edits, opt-in stop gate, session context.",
+  "description": "kit safety hooks: destructive-command guard, test/secret guard on edits, opt-in stop gate, subagent report gate, session context.",
   "hooks": {
     "PreToolUse": [
       {
@@ -33,6 +33,18 @@
             "command": "node",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/stop-gate.mjs"],
             "timeout": 600
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/subagent-report-gate.mjs"],
+            "timeout": 5
           }
         ]
       }

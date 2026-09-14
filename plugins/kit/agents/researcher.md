@@ -5,6 +5,7 @@ tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, Skill
 disallowedTools: Write, Edit, NotebookEdit
 model: sonnet
 effort: low
+maxTurns: 40
 color: cyan
 ---
 

@@ -3,6 +3,7 @@ name: implementer
 description: Implements one well-specified task end to end (code and tests) within a given scope. Use when a plan step or wave is large and independent enough to hand off. The brief must contain the objective, files, non-goals and verification commands.
 model: sonnet
 effort: medium
+maxTurns: 80
 color: yellow
 ---
 
