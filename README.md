@@ -24,7 +24,7 @@ node setup/setup.mjs --dry-run   # see what it will change
 node setup/setup.mjs             # add --disable-omc to turn off oh-my-claudecode
 ```
 
-Setup points `~/.claude/CLAUDE.md` at `global/CLAUDE.md`, merges [`global/settings.json`](global/settings.json), adds this repo as the `claude-kit` marketplace and installs `kit` plus context7, typescript-lsp, ruby-lsp, frontend-design, code-review and codex (if the Codex CLI is installed). It backs up what it changes to `~/.claude/backups/`. Restart Claude Code afterwards.
+Setup points `~/.claude/CLAUDE.md` at `global/CLAUDE.md`, merges [`global/settings.json`](global/settings.json), disables superpowers if it's enabled (its workflow and SessionStart hook compete with kit's skills), adds this repo as the `claude-kit` marketplace and installs `kit` plus context7, typescript-lsp, ruby-lsp, frontend-design, code-review and codex (if the Codex CLI is installed). It backs up what it changes to `~/.claude/backups/`. Restart Claude Code afterwards.
 
 The LSP plugins need their servers: `npm i -g typescript-language-server typescript` and `gem install ruby-lsp`.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Sets up claude-kit on this machine. Safe to re-run (after a `git pull`, for example).
 //   1. ~/.claude/CLAUDE.md imports global/CLAUDE.md from this repo, so edits here apply everywhere
-//   2. merges global/settings.json into ~/.claude/settings.json
+//   2. merges global/settings.json into ~/.claude/settings.json and disables superpowers if enabled
 //   3. adds this repo as a plugin marketplace and installs `kit` plus the recommended plugins
 // Everything it overwrites is backed up to ~/.claude/backups/claude-kit-<timestamp>/ first.
 //
@@ -83,6 +83,14 @@ function setupSettings() {
   if (DISABLE_OMC) {
     if (next.enabledPlugins?.['oh-my-claudecode@omc']) next.enabledPlugins['oh-my-claudecode@omc'] = false;
     if (/omc-hud/.test(next.statusLine?.command ?? '')) delete next.statusLine;
+  }
+  // superpowers ships its own plan/debug/review/finish workflow and a SessionStart hook
+  // that pushes it over the kit's skills, so it is always turned off.
+  for (const [plugin, enabled] of Object.entries(next.enabledPlugins ?? {})) {
+    if (enabled && plugin.startsWith('superpowers@')) {
+      next.enabledPlugins[plugin] = false;
+      log(`! disabling ${plugin} — it overlaps with kit (re-enable with: claude plugin enable ${plugin})`);
+    }
   }
   if (JSON.stringify(next) === JSON.stringify(current)) return log('✓ settings.json already up to date');
   write(file, `${JSON.stringify(next, null, 2)}\n`, 'settings.json merged');
