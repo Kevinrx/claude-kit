@@ -1,12 +1,14 @@
 ---
 name: implement
 description: Execute a plan made with kit:plan (docs/plans/<slug>/PLAN.md) step by step until its goal is met, ending in a PR. Use when asked to implement, continue, resume or finish a plan.
-argument-hint: "[plan slug or path]"
+argument-hint: "[plan slug or path] [--auto]"
 ---
 
 # Implement
 
 Done = every step's **done when** holds + the verification gate is green + delegated work is verified + PR open (if I want one). Not before, not "mostly".
+
+`--auto`: skip the commit/push/PR confirmation stops below — this invocation stands as authorization for committing each step, pushing and opening the PR, scoped to this plan's branch only. Everything else (blocking open questions, dirty-tree handling, the 3-attempt gate limit, never weakening a test) still applies. Use for unattended runs, e.g. under `/goal`.
 
 ## 0. Load
 
@@ -18,7 +20,7 @@ Done = every step's **done when** holds + the verification gate is green + deleg
 
 - Gate commands exist (check their source). The plan's facts still hold on the current base. Blocking open questions → ask me now.
 - Missing or vague `goal:` → write one from the gate and the steps, and note it in `PROGRESS.md`.
-- Ask once: may I commit each step on the plan branch? (Pushing and PRs are asked separately at the end.)
+- Ask once: may I commit each step on the plan branch? (Pushing and PRs are asked separately at the end.) Skip if `--auto`.
 - Create or switch to the plan's branch. Dirty tree → ask before switching.
 - Set `status: in progress` in `PROGRESS.md`.
 
@@ -50,7 +52,7 @@ Never weaken a test, add a skip, or disable a lint/type rule to get green. If a 
 
 ## 4. Finish
 
-- Ask before pushing and before opening the PR. `gh pr create` body: what changed and why, link to the plan, gate output, verifier verdict.
+- Ask before pushing and before opening the PR (skip if `--auto`). `gh pr create` body: what changed and why, link to the plan, gate output, verifier verdict.
 - Never merge.
 - Set `status: done` in `PROGRESS.md`.
 
