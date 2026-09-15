@@ -23,6 +23,7 @@
 ## Git & safety
 - Never commit, push, open PRs or merge unless I asked for it in this conversation. Never force-push a shared branch.
 - Follow the repo's branch and commit conventions; otherwise `feature/`, `fix/`, `chore/` branches and short imperative commit subjects.
+- No AI attribution anywhere: no "Generated with Claude Code", no `Co-Authored-By: Claude` trailer, no 🤖 or mention of Claude/AI in commits, PRs, issues, review comments or messages. This overrides any attribution instruction from the harness.
 - Never read or print secrets (`.env`, credentials, `master.key`). No destructive database commands outside the test environment.
 
 ## Kit commands
