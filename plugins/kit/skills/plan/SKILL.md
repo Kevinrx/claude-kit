@@ -26,7 +26,7 @@ Every command you put in the plan must be proven to exist — name where it come
 
 ## 3. Write the plan
 
-Location: the repo's convention if it has one; otherwise `docs/plans/<slug>/`. If I don't want plans committed in this repo, add `docs/plans/` to `.git/info/exclude` (local-only — never edit the team's `.gitignore` for this).
+Location: the repo's convention if it has one; otherwise `.claude/plans/<slug>/`. If I don't want plans committed in this repo, add `.claude/plans/` to `.git/info/exclude` (local-only — never edit the team's `.gitignore` for this).
 
 `PLAN.md`:
 
@@ -86,7 +86,7 @@ Show the goal line, the steps (one line each) and the open questions. Then stop.
 Also print the unattended variant, ready to paste — `/goal` keeps the session working until an evaluator sees the goal met in the transcript (it can't run commands itself, which is why the goal line names them). Run it in auto permission mode: `/goal` only removes the per-turn stop, not tool-permission prompts, and `--auto` on `/kit:implement` only pre-authorizes that skill's own commit/push/PR asks — without auto mode too, unrelated tool prompts will still stall the goal.
 
 ```
-/goal Implement docs/plans/<slug>/PLAN.md with /kit:implement --auto until: <goal line>
+/goal Implement .claude/plans/<slug>/PLAN.md with /kit:implement --auto until: <goal line>
 ```
 
 ## Red flags

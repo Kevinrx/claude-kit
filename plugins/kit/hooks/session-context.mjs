@@ -47,7 +47,7 @@ function detectStacks(root) {
 }
 
 function activePlans(root) {
-  const dir = join(root, 'docs', 'plans');
+  const dir = join(root, '.claude', 'plans');
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'PLAN.md')))
@@ -55,7 +55,7 @@ function activePlans(root) {
       const progress = join(dir, d.name, 'PROGRESS.md');
       return !existsSync(progress) || !/^status:\s*done\b/im.test(readFileSync(progress, 'utf8'));
     })
-    .map((d) => `docs/plans/${d.name}`);
+    .map((d) => `.claude/plans/${d.name}`);
 }
 
 function progressTail(root, plan) {

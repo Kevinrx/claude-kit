@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Handoff
 
-1. **Where.** The active plan's `PROGRESS.md`. No plan → create `docs/plans/<slug>/PROGRESS.md` with a one-line objective.
+1. **Where.** The active plan's `PROGRESS.md`. No plan → create `.claude/plans/<slug>/PROGRESS.md` with a one-line objective.
 2. **Write** a `## Handoff — <YYYY-MM-DD>` section:
    - goal (one line), branch, last commit
    - done, with evidence (command + result)
@@ -14,5 +14,5 @@ disable-model-invocation: true
    - next steps, in order
    - gotchas: what failed, what's been ruled out, environment quirks, the commands that matter
    - uncommitted changes (`git status --short`)
-3. **Ask me** whether to commit a WIP (`wip: handoff <slug>`) and push the branch so the other machine can pick it up. Touch nothing in git without a yes. If `docs/plans/` is in `.git/info/exclude`, the file won't travel with a push — say so, and offer to paste the handoff into the PR or issue instead.
-4. **Tell me the resume command**: `/kit:implement <slug>`, or "read `docs/plans/<slug>/PROGRESS.md` and continue".
+3. **Ask me** whether to commit a WIP (`wip: handoff <slug>`) and push the branch so the other machine can pick it up. Touch nothing in git without a yes. If `.claude/plans/` is in `.git/info/exclude`, the file won't travel with a push — say so, and offer to paste the handoff into the PR or issue instead.
+4. **Tell me the resume command**: `/kit:implement <slug>`, or "read `.claude/plans/<slug>/PROGRESS.md` and continue".
