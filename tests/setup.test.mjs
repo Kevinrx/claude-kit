@@ -26,7 +26,7 @@ test('setup --dry-run reports what it would change and touches nothing', () => {
   assert.equal(readFileSync(join(claudeDir, 'CLAUDE.md'), 'utf8'), claudeMd);
 });
 
-test('setup disables superpowers and leaves other plugins alone', () => {
+test('setup leaves superpowers alone by default', () => {
   const home = tempDir();
   const claudeDir = join(home, '.claude');
   mkdirSync(claudeDir);
@@ -38,6 +38,27 @@ test('setup disables superpowers and leaves other plugins alone', () => {
   writeFileSync(join(claudeDir, 'settings.json'), JSON.stringify({ enabledPlugins }));
 
   const r = spawnSync(process.execPath, [join(ROOT, 'setup', 'setup.mjs'), '--skip-plugins'], {
+    encoding: 'utf8',
+    env: { ...process.env, HOME: home, USERPROFILE: home },
+  });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /disabling superpowers/);
+  const settings = JSON.parse(readFileSync(join(claudeDir, 'settings.json'), 'utf8'));
+  assert.deepEqual(settings.enabledPlugins, enabledPlugins);
+});
+
+test('setup --disable-superpowers disables it and leaves other plugins alone', () => {
+  const home = tempDir();
+  const claudeDir = join(home, '.claude');
+  mkdirSync(claudeDir);
+  const enabledPlugins = {
+    'superpowers@superpowers-marketplace': true,
+    'superpowers@claude-plugins-official': false,
+    'context7@claude-plugins-official': true,
+  };
+  writeFileSync(join(claudeDir, 'settings.json'), JSON.stringify({ enabledPlugins }));
+
+  const r = spawnSync(process.execPath, [join(ROOT, 'setup', 'setup.mjs'), '--skip-plugins', '--disable-superpowers'], {
     encoding: 'utf8',
     env: { ...process.env, HOME: home, USERPROFILE: home },
   });
