@@ -1,6 +1,8 @@
 # claude-kit
 
-A plugin for [Claude Code](https://docs.claude.com/en/docs/claude-code) that turns it into a plan → implement → verify workflow: a set of slash-command **skills** (like `/kit:plan`), a few review and implementation **agents** it can delegate to, and safety **hooks** that run automatically around what it does — plus one shared set of global rules. It's Kevin's personal setup, kept in a public repo so every machine runs the same version; install it as-is, or fork it and change the rules to your own.
+This is Kevin's personal [Claude Code](https://docs.claude.com/en/docs/claude-code) setup, kept in a public repo so every machine runs the same version — it's not built to suit everyone, but you're welcome to install it as-is or fork it and change the rules to your own.
+
+It's one plugin (`kit`) that turns Claude Code into a plan → implement → verify workflow: a set of slash-command **skills** (like `/kit:plan`), a few review and implementation **agents** it can delegate to, and safety **hooks** that run automatically around what it does — plus one shared set of global rules.
 
 If you're new to Claude Code plugins: a **skill** is a written procedure Claude follows when you type its slash command (or, for some, whenever the situation matches — see [Commands](#commands)); an **agent** is a subagent Claude can hand a task to, with its own tools and often its own model; a **hook** is a script the Claude Code harness runs on its own, around tool calls or at session start, whether or not Claude "wants" it to.
 
