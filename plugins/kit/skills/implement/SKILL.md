@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Execute a plan made with kit:plan (.claude/plans/<slug>/PLAN.md) step by step until its goal is met, ending in a PR. Use when asked to implement, continue, resume or finish a plan.
+description: Execute a plan made with kit:plan (.claude/kit-plans/<slug>/PLAN.md) step by step until its goal is met, ending in a PR. Use when asked to implement, continue, resume or finish a plan.
 argument-hint: "[plan slug or path] [--auto]"
 ---
 
