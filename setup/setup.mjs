@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Sets up claude-kit on this machine. Safe to re-run (after a `git pull`, for example).
 //   1. ~/.claude/CLAUDE.md imports global/CLAUDE.md from this repo, so edits here apply everywhere
-//   2. merges global/settings.json into ~/.claude/settings.json and disables superpowers if enabled
+//   2. merges global/settings.json into ~/.claude/settings.json
 //   3. adds this repo as a plugin marketplace and installs `kit` plus the recommended plugins
 // Everything it overwrites is backed up to ~/.claude/backups/claude-kit-<timestamp>/ first.
 //
-// Usage: node setup/setup.mjs [--dry-run] [--disable-omc] [--skip-plugins]
-//   --disable-omc   disable oh-my-claudecode, remove its CLAUDE.md block and its status line
+// Usage: node setup/setup.mjs [--dry-run] [--disable-omc] [--disable-superpowers] [--skip-plugins]
+//   --disable-omc          disable oh-my-claudecode, remove its CLAUDE.md block and its status line
+//   --disable-superpowers  disable superpowers (its workflow and SessionStart hook compete with kit's skills)
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -16,6 +17,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 const args = new Set(process.argv.slice(2));
 const DRY = args.has('--dry-run');
 const DISABLE_OMC = args.has('--disable-omc');
+const DISABLE_SUPERPOWERS = args.has('--disable-superpowers');
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HOME = homedir();
 const CLAUDE_DIR = join(HOME, '.claude');
@@ -85,8 +87,8 @@ function setupSettings() {
     if (/omc-hud/.test(next.statusLine?.command ?? '')) delete next.statusLine;
   }
   // superpowers ships its own plan/debug/review/finish workflow and a SessionStart hook
-  // that pushes it over the kit's skills, so it is always turned off.
-  for (const [plugin, enabled] of Object.entries(next.enabledPlugins ?? {})) {
+  // that pushes it over the kit's skills, so --disable-superpowers turns it off.
+  if (DISABLE_SUPERPOWERS) for (const [plugin, enabled] of Object.entries(next.enabledPlugins ?? {})) {
     if (enabled && plugin.startsWith('superpowers@')) {
       next.enabledPlugins[plugin] = false;
       log(`! disabling ${plugin} — it overlaps with kit (re-enable with: claude plugin enable ${plugin})`);
