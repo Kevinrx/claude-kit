@@ -12,12 +12,12 @@ function planRepo() {
   writeFileSync(join(dir, 'package.json'), JSON.stringify({ dependencies: { react: '^18.0.0' } }));
   mkdirSync(join(dir, '.claude'));
   writeFileSync(join(dir, '.claude', 'gate'), 'exit 0\n');
-  mkdirSync(join(dir, 'docs', 'plans', 'discounts'), { recursive: true });
-  writeFileSync(join(dir, 'docs', 'plans', 'discounts', 'PLAN.md'), '# Discounts\n');
-  writeFileSync(join(dir, 'docs', 'plans', 'discounts', 'PROGRESS.md'), 'status: in progress\n## Log\n- step 1 — done — bin/rspec green\n');
-  mkdirSync(join(dir, 'docs', 'plans', 'old'), { recursive: true });
-  writeFileSync(join(dir, 'docs', 'plans', 'old', 'PLAN.md'), '# Old\n');
-  writeFileSync(join(dir, 'docs', 'plans', 'old', 'PROGRESS.md'), 'status: done\n');
+  mkdirSync(join(dir, '.claude', 'kit-plans', 'discounts'), { recursive: true });
+  writeFileSync(join(dir, '.claude', 'kit-plans', 'discounts', 'PLAN.md'), '# Discounts\n');
+  writeFileSync(join(dir, '.claude', 'kit-plans', 'discounts', 'PROGRESS.md'), 'status: in progress\n## Log\n- step 1 — done — bin/rspec green\n');
+  mkdirSync(join(dir, '.claude', 'kit-plans', 'old'), { recursive: true });
+  writeFileSync(join(dir, '.claude', 'kit-plans', 'old', 'PLAN.md'), '# Old\n');
+  writeFileSync(join(dir, '.claude', 'kit-plans', 'old', 'PROGRESS.md'), 'status: done\n');
   return dir;
 }
 
@@ -29,14 +29,14 @@ test('session-context reports stack, gate and unfinished plans', () => {
   assert.match(r.stdout, /Load kit:stack-rails, kit:stack-react before/);
   assert.doesNotMatch(r.stdout, /stack-node/);
   assert.match(r.stdout, /Stop gate active/);
-  assert.match(r.stdout, /docs\/plans\/discounts/);
-  assert.doesNotMatch(r.stdout, /docs\/plans\/old/);
+  assert.match(r.stdout, /\.claude\/kit-plans\/discounts/);
+  assert.doesNotMatch(r.stdout, /\.claude\/kit-plans\/old/);
   assert.doesNotMatch(r.stdout, /step 1 — done/, 'progress tail only after compaction');
 });
 
 test('session-context repeats plan progress after compaction', () => {
   const r = context(planRepo(), { source: 'compact' });
-  assert.match(r.stdout, /docs\/plans\/discounts\/PROGRESS\.md \(last lines\)/);
+  assert.match(r.stdout, /\.claude\/kit-plans\/discounts\/PROGRESS\.md \(last lines\)/);
   assert.match(r.stdout, /step 1 — done — bin\/rspec green/);
 });
 
