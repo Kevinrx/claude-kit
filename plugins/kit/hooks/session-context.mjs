@@ -1,7 +1,11 @@
 // SessionStart: add a few lines of context — git state, detected stack (so the
-// right kit:stack-* skills get loaded), stop gate status and unfinished plans.
+// right kit:stack-* skills get loaded), stop gate status, unfinished plans, and
+// a check that ~/.claude/CLAUDE.md's import of claude-kit's global/CLAUDE.md
+// still resolves (it silently stops working if setup was never run on this
+// machine, or the claude-kit clone moved).
 // After a compaction it also repeats where each unfinished plan stands.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { git, main } from './lib.mjs';
 
@@ -58,6 +62,19 @@ function activePlans(root) {
     .map((d) => `.claude/kit-plans/${d.name}`);
 }
 
+// Detects a broken claude-kit global import: missing setup, missing import
+// block, or an @-path that no longer resolves (moved/renamed clone).
+function claudeKitImportIssue() {
+  const hint = 'run `node setup/setup.mjs` from your claude-kit clone';
+  const file = join(homedir(), '.claude', 'CLAUDE.md');
+  if (!existsSync(file)) return `~/.claude/CLAUDE.md not found — claude-kit's global rules aren't loaded (${hint}).`;
+  const match = readFileSync(file, 'utf8').match(/<!-- claude-kit:start -->\s*\n@(\S+)/);
+  if (!match) return `~/.claude/CLAUDE.md has no claude-kit import block — claude-kit's global rules aren't loaded (${hint}).`;
+  const importPath = match[1].startsWith('~/') ? join(homedir(), match[1].slice(2)) : match[1];
+  if (!existsSync(importPath)) return `~/.claude/CLAUDE.md imports ${match[1]}, which doesn't exist — claude-kit's global rules aren't loaded (${hint}, or check the repo wasn't moved).`;
+  return null;
+}
+
 function progressTail(root, plan) {
   const file = join(root, plan, 'PROGRESS.md');
   if (!existsSync(file)) return [];
@@ -69,6 +86,9 @@ main((input) => {
   const cwd = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
   const root = git(cwd, ['rev-parse', '--show-toplevel']) ?? cwd;
   const lines = [];
+
+  const importIssue = claudeKitImportIssue();
+  if (importIssue) lines.push(`! ${importIssue}`);
 
   const branch = git(cwd, ['rev-parse', '--abbrev-ref', 'HEAD']);
   if (branch) {

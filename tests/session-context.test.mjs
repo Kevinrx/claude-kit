@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gitRepo, runHook } from './helpers.mjs';
+import { gitRepo, runHook, tempDir } from './helpers.mjs';
 
 const context = (dir, extra = {}) => runHook('session-context.mjs', { hook_event_name: 'SessionStart', cwd: dir, ...extra }, { CLAUDE_PROJECT_DIR: dir });
 
@@ -38,6 +38,34 @@ test('session-context repeats plan progress after compaction', () => {
   const r = context(planRepo(), { source: 'compact' });
   assert.match(r.stdout, /\.claude\/kit-plans\/discounts\/PROGRESS\.md \(last lines\)/);
   assert.match(r.stdout, /step 1 — done — bin\/rspec green/);
+});
+
+test('session-context warns when ~/.claude/CLAUDE.md has no claude-kit import', () => {
+  const home = tempDir();
+  const dir = gitRepo();
+  const r = runHook('session-context.mjs', { hook_event_name: 'SessionStart', cwd: dir }, { CLAUDE_PROJECT_DIR: dir, HOME: home, USERPROFILE: home });
+  assert.match(r.stdout, /~\/\.claude\/CLAUDE\.md not found — claude-kit's global rules aren't loaded/);
+  assert.match(r.stdout, /node setup\/setup\.mjs/);
+});
+
+test('session-context warns when the claude-kit import path is broken', () => {
+  const home = tempDir();
+  mkdirSync(join(home, '.claude'), { recursive: true });
+  writeFileSync(join(home, '.claude', 'CLAUDE.md'), '<!-- claude-kit:start -->\n@/nonexistent/global/CLAUDE.md\n<!-- claude-kit:end -->\n');
+  const dir = gitRepo();
+  const r = runHook('session-context.mjs', { hook_event_name: 'SessionStart', cwd: dir }, { CLAUDE_PROJECT_DIR: dir, HOME: home, USERPROFILE: home });
+  assert.match(r.stdout, /imports \/nonexistent\/global\/CLAUDE\.md, which doesn't exist/);
+});
+
+test('session-context stays quiet when the claude-kit import resolves', () => {
+  const home = tempDir();
+  mkdirSync(join(home, '.claude'), { recursive: true });
+  const target = join(home, 'global-claude.md');
+  writeFileSync(target, '# rules\n');
+  writeFileSync(join(home, '.claude', 'CLAUDE.md'), `<!-- claude-kit:start -->\n@${target.replace(/\\/g, '/')}\n<!-- claude-kit:end -->\n`);
+  const dir = gitRepo();
+  const r = runHook('session-context.mjs', { hook_event_name: 'SessionStart', cwd: dir }, { CLAUDE_PROJECT_DIR: dir, HOME: home, USERPROFILE: home });
+  assert.doesNotMatch(r.stdout, /claude-kit/);
 });
 
 test('session-context detects stacks in monorepo subdirectories, once per stack', () => {
