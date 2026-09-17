@@ -49,6 +49,12 @@ test('agents have name, description and model', () => {
   }
 });
 
+test('reviewer and security-reviewer default to sonnet, not opus', () => {
+  const byFile = Object.fromEntries(agents.map(({ file, fm }) => [file, fm]));
+  assert.equal(byFile.reviewer.model, 'sonnet', 'reviewer should default to the cheap tier; callers override to opus per diff size/risk');
+  assert.equal(byFile['security-reviewer'].model, 'sonnet', 'security-reviewer should default to the cheap tier; callers override to opus per diff size/risk');
+});
+
 test('every hook script referenced in hooks.json exists', () => {
   const { hooks } = JSON.parse(read(PLUGIN, 'hooks', 'hooks.json'));
   const paths = Object.values(hooks).flat().flatMap((m) => m.hooks).flatMap((h) => h.args ?? []);
