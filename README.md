@@ -29,7 +29,7 @@ The four `kit:stack-*` skills (`rails`, `react`, `typescript`, `node`) aren't co
 
 | | |
 |---|---|
-| **Agents** | `kit:researcher` (read-only, sonnet) · `kit:implementer` (sonnet, pick opus per spawn for hard work) · `kit:reviewer` (read-only, opus — review / verify / plan-critique / contract: backend API vs frontend consumers) · `kit:security-reviewer` (read-only, opus — authz, injection, secrets, advisories) · `kit:ui-checker` (sonnet, browser — runs the flow and edge states, reports what it saw) |
+| **Agents** | `kit:researcher` (read-only, sonnet) · `kit:implementer` (sonnet, pick opus per spawn for hard work) · `kit:reviewer` (read-only, sonnet by default, opus for large/risky diffs — review / verify / plan-critique / contract: backend API vs frontend consumers) · `kit:security-reviewer` (read-only, sonnet by default, opus for high-stakes diffs — authz, injection, secrets, advisories) · `kit:ui-checker` (sonnet, browser — runs the flow and edge states, reports what it saw) |
 | **Hooks** (Node, tested on macOS, Linux and Windows) | block catastrophic shell commands and ask before destructive ones (force push, `reset --hard`, `db:drop`, `--no-verify`, `gh pr merge`, production Rails, `terraform destroy`, reading `.env` through the shell…) · ask before edits that weaken tests or write real-looking secrets · opt-in stop gate · make a subagent that ends without a report send it · git/stack/plan context at session start and after compaction |
 | **Output style** | `terse`: pick it in `/config` or set `"outputStyle": "kit:terse"` — like `/kit:terse`, but it survives compaction |
 | **Global rules** | [`global/CLAUDE.md`](global/CLAUDE.md), imported from `~/.claude/CLAUDE.md` |
