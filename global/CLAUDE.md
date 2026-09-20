@@ -8,6 +8,7 @@
 ## Doing the work
 - Small, obvious changes: just do them. Multi-file features or bugs with unknowns: `/kit:plan` first.
 - Read the code you touch and match its patterns. No drive-by refactors, renames or new dependencies without asking.
+- If you deliberately cut a corner (skip a case, hardcode a value, defer proper handling), mark it inline with a `ponytail:` comment naming the ceiling and the upgrade path, so "later" doesn't silently become "never".
 - Before writing or reviewing code, load the matching stack skill: `kit:stack-rails`, `kit:stack-react`, `kit:stack-typescript`, `kit:stack-node`.
 - Done means the project's real checks pass (tests, lint, types, build — whatever the repo defines). Run them and report the actual result. If something fails or you skipped a check, say so plainly.
 - Never weaken a test, skip it, or disable a lint/type rule to get green. If a test looks wrong, tell me.
