@@ -21,7 +21,7 @@ Everything below is invoked as `/kit:<name>`, e.g. `/kit:plan`. Arguments in `[b
 - **`/kit:learn [the lesson]`** — turns a mistake or a repeated failure into a durable rule, placed wherever will actually prevent it again: a guard hook with a test, a `CLAUDE.md` line, a stack-skill checklist item, or memory.
 - **`/kit:gate`** — sets up (or fixes) a repo's stop gate: a `.claude/gate` script built from the checks the repo actually has. While it fails, Claude can't end a turn with uncommitted changes.
 - **`/kit:terse [lite|full|ultra|off]`** — switches replies to compressed, fewer-token mode for the rest of the session; `off` (or "normal mode") turns it back off.
-- **`/kit:humanize [off]`** — strips AI-sounding tells (marketing verbs, "not just X, it's Y" formulas, padded lists) from prose you ask it to write for someone else to read — READMEs, docs, PR descriptions.
+- **`/kit:humanize [file path]`** — rewrites AI-sounding prose (staging tells like "not just X, it's Y", forced triads, em-dash rhythm, marketing words, bold-labeled lists, chatbot leftovers) so it reads like a person wrote it, without changing what it says. Triggers on its own for prose meant for someone else to read — READMEs, docs, PR descriptions, product copy — or run it explicitly on a file.
 
 The four `kit:stack-*` skills (`rails`, `react`, `typescript`, `node`) aren't commands — they load automatically based on which files are being touched, and give Claude the conventions and review checklist for that stack.
 
