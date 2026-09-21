@@ -52,7 +52,15 @@ Never weaken a test, add a skip, or disable a lint/type rule to get green. If a 
 
 ## 4. Finish
 
-- Ask before pushing and before opening the PR (skip if `--auto`). `gh pr create` body: what changed and why, link to the plan, gate output, verifier verdict.
+- Ask before pushing and before opening the PR (skip if `--auto`). Title: imperative, under ~70 chars, prefixed with the branch's type (`fix:`, `feat:`, `chore:`). `gh pr create` body:
+  ```
+  ## Summary
+  <1-3 bullets: what changed and why>
+
+  ## Test plan
+  - [ ] <gate command> — <result>
+  - [ ] <verifier verdict, if a subagent wrote code>
+  ```
 - Never merge.
 - Set `status: done` in `PROGRESS.md`.
 
