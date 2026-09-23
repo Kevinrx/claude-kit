@@ -49,10 +49,11 @@ test('agents have name, description and model', () => {
   }
 });
 
-test('reviewer and security-reviewer default to sonnet, not opus', () => {
+test('reviewer defaults to sonnet; security-reviewer defaults to opus', () => {
   const byFile = Object.fromEntries(agents.map(({ file, fm }) => [file, fm]));
   assert.equal(byFile.reviewer.model, 'sonnet', 'reviewer should default to the cheap tier; callers override to opus per diff size/risk');
-  assert.equal(byFile['security-reviewer'].model, 'sonnet', 'security-reviewer should default to the cheap tier; callers override to opus per diff size/risk');
+  // It only runs on already-sensitive diffs, and a missed security bug costs far more than the Opus premium (docs/spikes/opus-5-5-review.md).
+  assert.equal(byFile['security-reviewer'].model, 'opus', 'security-reviewer should default to opus');
 });
 
 test('no doc tells callers to pass a per-spawn effort override', () => {

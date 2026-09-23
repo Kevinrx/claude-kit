@@ -30,7 +30,7 @@ Not when you wrote it yourself this session: your own gate run is the evidence. 
 - **L3 Red-proof** — each new test must fail without the implementation it covers:
   `node "${CLAUDE_SKILL_DIR}/scripts/red-proof.mjs" --test-cmd "<test command>" <impl files>`
   Needs a clean tree and a test command that's green on HEAD; paths are relative to the current directory (on Windows the command runs in cmd.exe — use double quotes). Exit 0 = proven; 1 = the test isn't load-bearing (FAIL); 2/3 = usage or setup error, not a verdict.
-- **L4 Adversarial** — only for the risk areas above: try to break it. UI changes need runtime evidence (run it, screenshot, curl — or spawn `kit:ui-checker` with the expected behavior). For auth/permissions, multi-tenancy or money, also spawn `kit:security-reviewer` on the same diff — pass `model: "opus"` for a high-stakes case (core auth/session logic, payment processing, a migration moving data), its Sonnet default otherwise; its FAIL fails the verification.
+- **L4 Adversarial** — only for the risk areas above: try to break it. UI changes need runtime evidence (run it, screenshot, curl — or spawn `kit:ui-checker` with the expected behavior). For auth/permissions, multi-tenancy or money, also spawn `kit:security-reviewer` on the same diff (it runs on Opus by default); its FAIL fails the verification.
 
 ## Steering
 

@@ -36,3 +36,5 @@ Caveats:
 - Each model ran once per diff, so run-to-run variance isn't measured.
 - Diff C plants obvious bugs, which neither model missed. A subtler plant might separate them more.
 - It's worth re-running this if prices change or if Sonnet starts missing issues on real reviews.
+
+Follow-up (same day): `kit:security-reviewer` moved to an Opus default anyway. It only runs on diffs that already look sensitive, so it runs rarely. The one serious issue Opus alone caught here (the `NaN` bypass) was a security bug. `kit:reviewer` keeps the KEEP verdict above.
