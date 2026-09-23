@@ -56,6 +56,12 @@ test('reviewer defaults to sonnet; security-reviewer defaults to opus', () => {
   assert.equal(byFile['security-reviewer'].model, 'opus', 'security-reviewer should default to opus');
 });
 
+test('analyst runs on opus and is only spawned on request', () => {
+  const analyst = agents.find(({ file }) => file === 'analyst');
+  assert.equal(analyst.fm.model, 'opus', 'analyst is the deep-analysis agent; it should run on opus');
+  assert.match(analyst.fm.description, /ONLY when the user explicitly asks/, 'analyst must say it is opt-in so it is not auto-delegated');
+});
+
 test('no doc tells callers to pass a per-spawn effort override', () => {
   // The Agent tool takes a per-invocation `model` but no `effort`; effort comes only from frontmatter.
   const docs = [
