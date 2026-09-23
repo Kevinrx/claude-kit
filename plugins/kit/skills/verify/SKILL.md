@@ -20,7 +20,7 @@ Not when you wrote it yourself this session: your own gate run is the evidence. 
 
 1. Collect: the diff range (`git diff <base>...HEAD` plus uncommitted changes), the plan's **done when** lines / acceptance checks, the gate commands with their source, and whether the change touches a risk area (auth/permissions, multi-tenancy, money, migrations/data changes, deletion, UI behavior).
 2. **You** decide what must be true and write it into the brief before spawning. A checker left to pick its own check picks one the work already passes.
-3. Spawn `kit:reviewer` in **verify** mode with all of the above. Its default (Sonnet) is enough for L1/L2/L3, which are mechanical; pass an explicit `model: "opus"` override only when L4 applies (a risk area below) and adversarial reasoning is worth paying for.
+3. Spawn `kit:reviewer` in **verify** mode with all of the above. Its default (Sonnet) is enough for L1/L2/L3, which are mechanical (claude-kit `docs/spikes/opus-5-5-review.md`); pass an explicit `model: "opus"` override only when L4 applies (a risk area below) and adversarial reasoning is worth paying for.
 4. Act on the verdict: PASS → ready to commit / PR. PARTIAL → show me and let me decide. FAIL → back to the implementer with the findings, once, differently; a second FAIL comes to me.
 
 ## Layers the reviewer runs
