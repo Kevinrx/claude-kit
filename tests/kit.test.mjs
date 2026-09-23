@@ -49,10 +49,22 @@ test('agents have name, description and model', () => {
   }
 });
 
-test('reviewer and security-reviewer default to sonnet, not opus', () => {
+test('reviewer defaults to sonnet; security-reviewer defaults to opus', () => {
   const byFile = Object.fromEntries(agents.map(({ file, fm }) => [file, fm]));
   assert.equal(byFile.reviewer.model, 'sonnet', 'reviewer should default to the cheap tier; callers override to opus per diff size/risk');
-  assert.equal(byFile['security-reviewer'].model, 'sonnet', 'security-reviewer should default to the cheap tier; callers override to opus per diff size/risk');
+  // It only runs on already-sensitive diffs, and a missed security bug costs far more than the Opus premium (docs/spikes/opus-5-5-review.md).
+  assert.equal(byFile['security-reviewer'].model, 'opus', 'security-reviewer should default to opus');
+});
+
+test('no doc tells callers to pass a per-spawn effort override', () => {
+  // The Agent tool takes a per-invocation `model` but no `effort`; effort comes only from frontmatter.
+  const docs = [
+    ...readdirSync(join(PLUGIN, 'agents')).filter((f) => f.endsWith('.md')).map((f) => join(PLUGIN, 'agents', f)),
+    ...skills.map(({ dir }) => join(PLUGIN, 'skills', dir, 'SKILL.md')),
+  ];
+  for (const path of docs) {
+    assert.ok(!read(path).includes('`effort: "'), `${path}: spawns can't override effort; set it in the agent's frontmatter`);
+  }
 });
 
 test('every hook script referenced in hooks.json exists', () => {
