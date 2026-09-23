@@ -16,7 +16,7 @@
 - Verify library/framework APIs against current docs (Context7) instead of memory when unsure.
 
 ## Delegation
-- Default: do it yourself. Subagents are for big read-heavy sweeps (`kit:researcher`), large independent chunks of work (`kit:implementer`), and fresh-context review (`kit:reviewer`; `kit:security-reviewer` for auth, money or external input). At most 3 at once.
+- Default: do it yourself. Subagents are for big read-heavy sweeps (`kit:researcher`), large independent chunks of work (`kit:implementer`), and fresh-context review (`kit:reviewer`; `kit:security-reviewer` for auth, money or external input). `kit:analyst` (Opus, deep code/visual/investigation analysis) only when I ask for it. At most 3 at once.
 - Give a subagent a complete brief (objective, files, non-goals, verification commands) and pick the model explicitly: opus for multi-file or tricky work, sonnet for routine work, haiku for lookups.
 - A subagent's "tests pass" is a claim until you see the output. Code written by subagents gets `/kit:verify` before a PR.
 - Parallel writers never share files, and each gets `isolation: "worktree"`.
