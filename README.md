@@ -11,6 +11,7 @@ If you're new to Claude Code plugins: a **skill** is a written procedure Claude 
 Everything below is invoked as `/kit:<name>`, e.g. `/kit:plan`. Arguments in `[brackets]` are optional.
 
 - **`/kit:plan [issue number/url or description]`** — turns a feature request, bug report or GitHub issue into a written `PLAN.md` + `PROGRESS.md` that a fresh session (yours later, or another machine) can execute without asking anything. Read-only: it investigates the repo and interviews you for real unknowns, but writes only the plan files.
+- **`/kit:roadmap [feature or product description]`** — breaks a big feature or a new product into GitHub issues instead of implementing it: interviews you, drafts one issue per shippable slice (context, scope, acceptance criteria with tests, dependencies, out of scope) in a local `ROADMAP.md`, and creates them with `gh` only after you approve. Each issue is then planned on its own with `/kit:plan #N`.
 - **`/kit:implement [plan slug or path] [--auto]`** — executes a plan from `/kit:plan` step by step until its goal is met, then opens a PR. `--auto` skips the commit/push/PR confirmation stops, for unattended runs (e.g. under `/goal`); everything else — blocking questions, the 3-attempt gate limit, never weakening a test — still applies.
 - **`/kit:verify [plan slug | base branch]`** — independently checks work written by a subagent or another session before it's trusted: re-runs the gate, hunts for self-granted exceptions (skipped tests, disabled lint), and proves new tests actually fail without the change.
 - **`/kit:review [base branch | PR number | path]`** — fresh-context code review of the current changes for correctness, edge cases, security and stack-specific pitfalls, ending in a PASS / PASS WITH NOTES / FAIL verdict.
@@ -51,6 +52,7 @@ The LSP plugins need their servers: `npm i -g typescript-language-server typescr
 
 ## Day to day
 
+- Big feature or new product: `/kit:roadmap` → GitHub issues → `/kit:plan #N` for each one you pick up.
 - Feature or unclear bug: `/kit:plan <issue>` → read the plan → `/kit:implement <slug>` (or the `/goal …` line the plan prints, to run it unattended).
 - Review feedback on a PR: `/kit:address-review <pr>`.
 - Switching machines mid-task: `/kit:handoff`, push, then `/kit:implement <slug>` on the other one.

@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Turn a feature request, bug report or GitHub issue into a written plan that another session can execute, before any code is written. Use when asked to plan, scope, triage or investigate work, or when a task spans several files or has real unknowns. Not for one-file obvious changes.
+description: Turn a feature request, bug report or GitHub issue into a written plan that another session can execute, before any code is written. Use when asked to plan, scope, triage or investigate work, or when a task spans several files or has real unknowns. Not for one-file obvious changes. For a big feature spanning several PRs that should become GitHub issues instead of code, use kit:roadmap.
 argument-hint: "[issue number/url or description]"
 ---
 
@@ -8,7 +8,7 @@ argument-hint: "[issue number/url or description]"
 
 Output: `PLAN.md` + `PROGRESS.md` that you — or a fresh session on another machine — can execute with `/kit:implement` without asking anything. This is read-only investigation: the only files you write are the plan files.
 
-If the task turns out to be a one-file, obvious change, say so and offer to just do it.
+If the task turns out to be a one-file, obvious change, say so and offer to just do it. If it is really several PRs of work (a new product, a big feature) and I want it tracked as GitHub issues rather than implemented, say so and offer `/kit:roadmap`.
 
 ## 1. Discover the repo (never assume)
 

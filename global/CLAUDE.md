@@ -28,4 +28,4 @@
 - Never read or print secrets (`.env`, credentials, `master.key`). No destructive database commands outside the test environment.
 
 ## Kit commands
-`/kit:plan` · `/kit:implement` · `/kit:verify` · `/kit:review` · `/kit:debug` · `/kit:address-review` · `/kit:second-opinion` · `/kit:handoff` · `/kit:learn` · `/kit:gate` · `/kit:terse` · `/kit:humanize`
+`/kit:plan` · `/kit:roadmap` · `/kit:implement` · `/kit:verify` · `/kit:review` · `/kit:debug` · `/kit:address-review` · `/kit:second-opinion` · `/kit:handoff` · `/kit:learn` · `/kit:gate` · `/kit:terse` · `/kit:humanize`
