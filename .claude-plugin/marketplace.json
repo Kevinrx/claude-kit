@@ -12,6 +12,13 @@
       "source": "./plugins/kit",
       "category": "development",
       "tags": ["workflow", "verification", "hooks", "rails", "react"]
+    },
+    {
+      "name": "kit-mods",
+      "description": "Mods for the kit (Claude Code 2.1.287+): a band above the prompt with session/weekly limits, the active plan and running subagents; enforces the delegation rules; previews what a risky command would destroy.",
+      "source": "./plugins/kit-mods",
+      "category": "development",
+      "tags": ["mods", "workflow", "usage"]
     }
   ]
 }

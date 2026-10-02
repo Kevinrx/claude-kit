@@ -29,3 +29,14 @@ jobs:
           node-version: 22
       - run: npx -y @anthropic-ai/claude-code@2.1.261 plugin validate plugins/kit
       - run: npx -y @anthropic-ai/claude-code@2.1.261 plugin validate .
+
+  # Mods need Claude Code 2.1.287+ to validate and to run `plugin test`.
+  mods:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx -y @anthropic-ai/claude-code@2.1.287 plugin validate plugins/kit-mods
+      - run: npx -y @anthropic-ai/claude-code@2.1.287 plugin test plugins/kit-mods

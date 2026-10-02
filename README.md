@@ -32,6 +32,7 @@ The four `kit:stack-*` skills (`rails`, `react`, `typescript`, `node`) aren't co
 |---|---|
 | **Agents** | `kit:researcher` (read-only, sonnet) · `kit:implementer` (sonnet, pick opus per spawn for hard work) · `kit:reviewer` (read-only, sonnet by default, opus for large/risky diffs — review / verify / plan-critique / contract: backend API vs frontend consumers) · `kit:security-reviewer` (read-only, opus — authz, injection, secrets, advisories) · `kit:ui-checker` (sonnet, browser — runs the flow and edge states, reports what it saw) · `kit:analyst` (read-only, opus high — deep code / visual / investigation analysis, only when asked) |
 | **Hooks** (Node, tested on macOS, Linux and Windows) | block catastrophic shell commands and ask before destructive ones (force push, `reset --hard`, `db:drop`, `--no-verify`, `gh pr merge`, production Rails, `terraform destroy`, reading `.env` through the shell…) · ask before edits that weaken tests or write real-looking secrets · opt-in stop gate · make a subagent that ends without a report send it · git/stack/plan context at session start and after compaction |
+| **Mods** (`kit-mods`, a second plugin; Claude Code 2.1.287+, terminal and the Desktop Code tab) | a band above the prompt with the context window fill, your session (5-hour) and weekly limits and when they reset, the active `/kit:plan` and its step count, and the running subagents · refuses a 4th parallel subagent, and a second file-editing subagent without `isolation: "worktree"` · while `guard-commands` asks about `reset --hard`, `git clean`, a force push or `rm -r`, shows what it would destroy |
 | **Output style** | `terse`: pick it in `/config` or set `"outputStyle": "kit:terse"` — like `/kit:terse`, but it survives compaction |
 | **Global rules** | [`global/CLAUDE.md`](global/CLAUDE.md), imported from `~/.claude/CLAUDE.md` |
 
@@ -46,7 +47,7 @@ node setup/setup.mjs --dry-run   # see what it will change
 node setup/setup.mjs             # add --disable-omc / --disable-superpowers to turn those off too
 ```
 
-Setup points `~/.claude/CLAUDE.md` at `global/CLAUDE.md`, merges [`global/settings.json`](global/settings.json), adds this repo as the `claude-kit` marketplace and installs `kit` plus context7, typescript-lsp, ruby-lsp, frontend-design, code-review and codex (if the Codex CLI is installed). With `--disable-omc` or `--disable-superpowers`, it also turns off oh-my-claudecode or superpowers if either is installed and enabled — both ship their own plan/review workflows that compete with kit's. It backs up what it changes to `~/.claude/backups/`. Restart Claude Code afterwards.
+Setup points `~/.claude/CLAUDE.md` at `global/CLAUDE.md`, merges [`global/settings.json`](global/settings.json), adds this repo as the `claude-kit` marketplace and installs `kit` and `kit-mods` plus context7, typescript-lsp, ruby-lsp, frontend-design, code-review and codex (if the Codex CLI is installed). With `--disable-omc` or `--disable-superpowers`, it also turns off oh-my-claudecode or superpowers if either is installed and enabled — both ship their own plan/review workflows that compete with kit's. It backs up what it changes to `~/.claude/backups/`. Restart Claude Code afterwards.
 
 The LSP plugins need their servers: `npm i -g typescript-language-server typescript` and `gem install ruby-lsp`.
 
@@ -62,8 +63,8 @@ The LSP plugins need their servers: `npm i -g typescript-language-server typescr
 ## Changing the kit
 
 1. Edit here. Try it without installing: `claude --plugin-dir plugins/kit`.
-2. `npm test` (hooks, red-proof, setup, structure) and `npm run validate`. CI runs the tests on macOS, Linux and Windows.
-3. Commit and push. On each machine: `git pull`, then `claude plugin marketplace update claude-kit && claude plugin update kit@claude-kit`, and restart.
+2. `npm test` (hooks, red-proof, setup, structure) and `npm run validate`. CI runs the tests on macOS, Linux and Windows. For `kit-mods`, also `npm run test:mods` (needs Claude Code 2.1.287+).
+3. Commit and push. On each machine: `git pull`, then `claude plugin marketplace update claude-kit && claude plugin update kit@claude-kit && claude plugin update kit-mods@claude-kit`, and restart.
 
 `global/CLAUDE.md` changes apply as soon as the file changes (it's imported, not copied).
 

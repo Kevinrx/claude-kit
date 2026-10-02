@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
-    "validate": "claude plugin validate plugins/kit && claude plugin validate .",
+    "test": "node tests/run.mjs",
+    "validate": "claude plugin validate plugins/kit && claude plugin validate plugins/kit-mods && claude plugin validate .",
+    "test:mods": "claude plugin test plugins/kit-mods",
     "setup": "node setup/setup.mjs"
   },
   "engines": {
