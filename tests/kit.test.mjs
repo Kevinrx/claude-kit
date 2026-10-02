@@ -97,6 +97,17 @@ test('README and global CLAUDE.md list every command and agent', () => {
 });
 
 test('plugin.json has no version (updates follow the git commit)', () => {
-  const manifest = JSON.parse(read(PLUGIN, '.claude-plugin', 'plugin.json'));
-  assert.equal(manifest.version, undefined);
+  for (const plugin of ['kit', 'kit-mods']) {
+    const manifest = JSON.parse(read(ROOT, 'plugins', plugin, '.claude-plugin', 'plugin.json'));
+    assert.equal(manifest.version, undefined, `${plugin}: plugin.json must not set a version`);
+  }
+});
+
+test('every plugin folder is listed in the marketplace and installed by setup', () => {
+  const listed = JSON.parse(read(ROOT, '.claude-plugin', 'marketplace.json')).plugins.map((p) => p.source);
+  const setup = read(ROOT, 'setup', 'setup.mjs');
+  for (const dir of readdirSync(join(ROOT, 'plugins'))) {
+    assert.ok(listed.includes(`./plugins/${dir}`), `marketplace.json doesn't list plugins/${dir}`);
+    assert.ok(setup.includes(`'${dir}@\${MARKETPLACE}'`) || setup.includes(`\`${dir}@\${MARKETPLACE}\``), `setup.mjs doesn't install ${dir}`);
+  }
 });

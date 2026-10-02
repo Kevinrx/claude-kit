@@ -126,6 +126,7 @@ function setupPlugins() {
   const source = marketplaceSource();
   if (!claude('plugin', 'marketplace', 'add', source)) claude('plugin', 'marketplace', 'update', MARKETPLACE);
   claude('plugin', 'install', `kit@${MARKETPLACE}`);
+  claude('plugin', 'install', `kit-mods@${MARKETPLACE}`);
   for (const plugin of RECOMMENDED) claude('plugin', 'install', plugin);
   if (hasCommand('codex')) {
     claude('plugin', 'marketplace', 'add', 'openai/codex-plugin-cc');
