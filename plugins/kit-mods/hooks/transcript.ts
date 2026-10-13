@@ -3,7 +3,6 @@
 
 export const DIFF_CAP = 20
 export const TAIL_LINES = 3
-const LABEL_MAX = 80
 
 export type CallStatus = 'running' | 'ok' | 'error' | 'interrupted'
 export type EditDiff = { path: string; added: number; removed: number; hunks: string; hiddenLines: number }
@@ -23,41 +22,6 @@ export function truncate(text: string, max: number): string {
 // The last two segments of a path, either separator: `hooks/register.tsx`.
 export function shortPath(path: string): string {
   return path.split(/[\\/]/).filter(Boolean).slice(-2).join('/')
-}
-
-export function callLabel(tool: string, input: unknown): string {
-  const firstLine = (text: string) => truncate(text.trim().split(/\r?\n/)[0] ?? '', LABEL_MAX)
-  const mcp = /^mcp__(.+?)__(.+)$/.exec(tool)
-  if (mcp) return `${mcp[1]}: ${mcp[2]}`
-  switch (tool) {
-    case 'Bash':
-    case 'PowerShell': {
-      const command = field(input, 'command')
-      return command === undefined ? tool : firstLine(command)
-    }
-    case 'Read':
-    case 'Edit':
-    case 'Write':
-    case 'NotebookEdit': {
-      const path = field(input, 'file_path') ?? field(input, 'notebook_path')
-      return path === undefined ? tool : `${tool} ${shortPath(path)}`
-    }
-    case 'Grep':
-    case 'Glob': {
-      const pattern = field(input, 'pattern')
-      return pattern === undefined ? tool : `${tool} ${firstLine(pattern)}`
-    }
-    case 'WebFetch': {
-      const url = field(input, 'url')
-      return url === undefined ? tool : `${tool} ${truncate(url, LABEL_MAX)}`
-    }
-    case 'Agent': {
-      const description = field(input, 'description')
-      return description === undefined ? tool : `${tool} ${firstLine(description)}`
-    }
-    default:
-      return tool
-  }
 }
 
 export function callStatus(call: { isRunning: boolean; isErrored: boolean; isInterrupted: boolean }): CallStatus {

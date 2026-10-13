@@ -1,33 +1,8 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { callLabel, callStatus, editDiff, formatDuration, outputTail, shortPath, truncate } from '../hooks/transcript'
+import { callStatus, editDiff, formatDuration, outputTail, shortPath, truncate } from '../hooks/transcript'
 
-describe('call labels', () => {
-  test('names what each tool worked on', () => {
-    expect(callLabel('Bash', { command: 'npm test\necho done' })).toBe('npm test')
-    expect(callLabel('PowerShell', { command: 'Get-ChildItem' })).toBe('Get-ChildItem')
-    expect(callLabel('Read', { file_path: 'C:\\repo\\hooks\\register.tsx' })).toBe('Read hooks/register.tsx')
-    expect(callLabel('Edit', { file_path: '/repo/a.ts' })).toBe('Edit repo/a.ts')
-    expect(callLabel('Grep', { pattern: 'ToolGroup' })).toBe('Grep ToolGroup')
-    expect(callLabel('WebFetch', { url: 'https://example.com' })).toBe('WebFetch https://example.com')
-    expect(callLabel('Agent', { description: 'scan repo' })).toBe('Agent scan repo')
-    expect(callLabel('mcp__github__get_issue', {})).toBe('github: get_issue')
-    expect(callLabel('TodoWrite', { todos: [] })).toBe('TodoWrite')
-  })
-
-  test('never throws on malformed input', () => {
-    for (const input of [undefined, null, 'x', 3, { command: 5 }, { file_path: '' }]) {
-      expect(callLabel('Bash', input)).toBe('Bash')
-      expect(callLabel('Read', input)).toBe('Read')
-    }
-  })
-
-  test('cuts a long command', () => {
-    const label = callLabel('Bash', { command: 'x'.repeat(200) })
-    expect(label.length).toBe(80)
-    expect(label.endsWith('…')).toBe(true)
-  })
-
+describe('text helpers', () => {
   test('truncate and shortPath', () => {
     expect(truncate('abcdef', 4)).toBe('abc…')
     expect(truncate('abc', 4)).toBe('abc')
