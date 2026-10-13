@@ -3,8 +3,9 @@
 // Everything that touches `$` lives in this file: the engine only follows `$`
 // into functions declared here, so the other files hold pure logic.
 import type { EngineInterface, Register } from 'claude-code'
+import { update } from 'claude-code'
 
-import type { KitModsAgent, KitModsLimit } from '../types'
+import type { KitModsAgent, KitModsLimit, KitModsTiming } from '../types'
 import type { Risk } from './blast'
 import { classify, cleanSummary, describeRisk, diffSummary, formatBytes, isUnmeasurable, joinPath, pushSummary } from './blast'
 import { MAX_RUNNING, spawnRefusal } from './delegation'
@@ -25,6 +26,8 @@ import {
 } from './limits'
 import type { ParsedPlan } from './plan'
 import { isProgressFile, parsePlan, pickActive, PLANS_DIR } from './plan'
+import type { CallStatus } from './transcript'
+import { callLabel, callStatus, editDiff, formatDuration, outputTail, shortPath, truncate } from './transcript'
 
 const limitsRef = { plugin: 'kit-mods', key: 'limits' } as const
 const contextRef = { plugin: 'kit-mods', key: 'context' } as const
@@ -32,8 +35,19 @@ const LIMITS_STORE_KEY = 'limits'
 const planRef = { plugin: 'kit-mods', key: 'plan' } as const
 const agentsRef = { plugin: 'kit-mods', key: 'agents' } as const
 const blastRef = { plugin: 'kit-mods', key: 'blast' } as const
+const timingsRef = { plugin: 'kit-mods', key: 'timings' } as const
 
 const MAX_WALK = 10_000
+// shortcut: keeps the newest 200 call timings, so rows of older calls in a long
+// session lose their duration. Upgrade: drop entries by age once groups scroll away.
+const MAX_TIMINGS = 200
+const SHELLS = new Set(['Bash', 'PowerShell'])
+const STATUS_MARK: Record<CallStatus, { glyph: string; color: string }> = {
+  ok: { glyph: '✓', color: 'green' },
+  error: { glyph: '✗', color: 'red' },
+  running: { glyph: '…', color: 'gray' },
+  interrupted: { glyph: '⊘', color: 'yellow' },
+}
 
 // Per Agent call, whether the model asked for a worktree: the Agent tool's
 // input carries `isolation`, the agent.spawn event that follows doesn't.
@@ -182,6 +196,16 @@ async function withBlastRadius<T>($: EngineInterface, command: string, run: () =
   }
 }
 
+async function recordTiming($: EngineInterface, id: string, change: (timing: KitModsTiming | undefined, now: number) => KitModsTiming): Promise<void> {
+  const now = await $.clock.now()
+  await update($, timingsRef, timings => {
+    const next = { ...(timings ?? {}), [id]: change(timings?.[id], now) }
+    const ids = Object.keys(next)
+    for (const old of ids.slice(0, Math.max(0, ids.length - MAX_TIMINGS))) delete next[old]
+    return next
+  })
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
@@ -243,6 +267,84 @@ export const register: Register = on => {
 
   on('tool.call', { tool: 'Bash' }, ($, e, next) => withBlastRadius($, e.command, () => next(e)))
   on('tool.call', { tool: 'PowerShell' }, ($, e, next) => withBlastRadius($, e.command, () => next(e)))
+
+  // When each call started and ended, for the durations a folded group draws.
+  on('tool.call', async ($, e, next) => {
+    await quietly(recordTiming($, e.tool_use_id, (_, now) => ({ startedAt: now })))
+    try {
+      return await next(e)
+    } finally {
+      await quietly(recordTiming($, e.tool_use_id, (timing, now) => ({ startedAt: timing?.startedAt ?? now, endedAt: now })))
+    }
+  })
+
+  // A folded group keeps the engine's count line and lists each call under it:
+  // what ran, how it ended and how long it took, a failed command's last lines
+  // and an edit's capped diff. Expanded, it's the engine's rows as before.
+  on('ui.render', { component: 'ToolGroup' }, async ($, e, next) => {
+    if (e.props.isExpanded || e.props.calls.length === 0) return next(e)
+    const [engine, { value: timings = {} }] = await Promise.all([next(e), $.state.get(timingsRef)])
+    const { Box, Text, Code } = $.ui.resolve(e)
+    const columns = Math.max(20, (e.viewport?.columns ?? 100) - 6)
+
+    return (
+      <Box flexDirection="column">
+        {engine}
+        <Box key="calls" flexDirection="column" paddingLeft={2}>
+          {e.props.calls.map((call, index) => {
+            const status = callStatus(call)
+            const mark = STATUS_MARK[status]
+            const timing = call.tool_use_id === undefined ? undefined : timings[call.tool_use_id]
+            const duration =
+              status === 'running' ? 'running' : timing?.endedAt === undefined ? undefined : formatDuration(timing.endedAt - timing.startedAt)
+            const tail = status === 'error' && SHELLS.has(call.tool) ? outputTail(call.output) : []
+            const diff = status === 'ok' ? editDiff(call.tool, call.output) : undefined
+            return (
+              <Box key={call.tool_use_id ?? `call-${index}`} flexDirection="column">
+                <Box flexDirection="row" columnGap={1}>
+                  <Text color={mark.color}>{mark.glyph}</Text>
+                  <Text wrap="truncate-end">{truncate(callLabel(call.tool, call.input), columns)}</Text>
+                  {duration !== undefined && <Text dimColor>{duration}</Text>}
+                </Box>
+                {tail.map(line => (
+                  <Text color="red" dimColor wrap="truncate-end">{`  ${truncate(line, columns)}`}</Text>
+                ))}
+                {diff !== undefined && (
+                  <Box flexDirection="column" paddingLeft={2}>
+                    <Box flexDirection="row" columnGap={1}>
+                      <Text>{shortPath(diff.path)}</Text>
+                      <Text color="green">{`+${diff.added}`}</Text>
+                      <Text color="red">{`−${diff.removed}`}</Text>
+                    </Box>
+                    <Code source={diff.hunks} path={diff.path} format="diff" wrap="truncate-end" />
+                    {diff.hiddenLines > 0 && <Text dimColor>{`… ${diff.hiddenLines} more lines`}</Text>}
+                  </Box>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
+      </Box>
+    )
+  })
+
+  // An edit's result block: `path  +N −M` and the diff capped to a screenful.
+  on('ui.render', { component: 'ToolResult' }, async ($, e, next) => {
+    const diff = e.props.isErrored ? undefined : editDiff(e.props.tool, e.props.output)
+    if (diff === undefined) return next(e)
+    const { Box, Text, Code } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="column">
+        <Box flexDirection="row" columnGap={1}>
+          <Text>{shortPath(diff.path)}</Text>
+          <Text color="green">{`+${diff.added}`}</Text>
+          <Text color="red">{`−${diff.removed}`}</Text>
+        </Box>
+        <Code source={diff.hunks} path={diff.path} format="diff" wrap="truncate-end" />
+        {diff.hiddenLines > 0 && <Text dimColor>{`… ${diff.hiddenLines} more lines`}</Text>}
+      </Box>
+    )
+  })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
