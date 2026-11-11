@@ -14,6 +14,19 @@ const field = (value: unknown, key: string): string | undefined => {
   return typeof found === 'string' && found !== '' ? found : undefined
 }
 
+const TAB = '    '
+// CSI (colours, cursor moves) and OSC (titles, hyperlinks) escape sequences.
+const ESCAPES = /\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)?/g
+const INVISIBLE = /[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu
+
+// One line made safe to draw: a tree holding a control character is refused
+// (the engine then draws its own row), and invisible characters (bidi
+// overrides, zero-width spaces) could reorder or hide what a line says. Escape
+// sequences go whole, tabs become spaces, every other such character is dropped.
+export function drawable(line: string): string {
+  return line.replace(ESCAPES, '').replaceAll('\t', TAB).replace(INVISIBLE, '')
+}
+
 export function truncate(text: string, max: number): string {
   if (max < 2 || text.length <= max) return text
   return `${text.slice(0, max - 1)}…`
@@ -21,7 +34,7 @@ export function truncate(text: string, max: number): string {
 
 // The last two segments of a path, either separator: `hooks/register.tsx`.
 export function shortPath(path: string): string {
-  return path.split(/[\\/]/).filter(Boolean).slice(-2).join('/')
+  return drawable(path.split(/[\\/]/).filter(Boolean).slice(-2).join('/'))
 }
 
 export function callStatus(call: { isRunning: boolean; isErrored: boolean; isInterrupted: boolean }): CallStatus {
@@ -43,7 +56,7 @@ export function outputTail(output: unknown, count = TAIL_LINES): string[] {
   const text = typeof output === 'string' ? output : [field(output, 'stderr'), field(output, 'stdout')].filter(Boolean).join('\n')
   return text
     .split(/\r?\n/)
-    .map(line => line.trimEnd())
+    .map(line => drawable(line).trimEnd())
     .filter(line => line.trim() !== '')
     .slice(-count)
 }
@@ -60,7 +73,7 @@ function readHunks(value: unknown): Hunk[] | undefined {
       oldLines: oldLines as number,
       newStart: newStart as number,
       newLines: newLines as number,
-      lines: hunk.lines.filter((line): line is string => typeof line === 'string').map(line => line.replace(/\r$/, '')),
+      lines: hunk.lines.filter((line): line is string => typeof line === 'string').map(line => line.slice(0, 1) + drawable(line.slice(1))),
     })
   }
   return hunks
@@ -90,13 +103,14 @@ function capHunks(hunks: readonly Hunk[], cap: number): { text: string; hidden: 
 
 export function editDiff(tool: string, output: unknown, cap = DIFF_CAP): EditDiff | undefined {
   if ((tool !== 'Edit' && tool !== 'Write') || !isRecord(output) || output.staged === true) return undefined
-  const path = field(output, 'filePath')
-  if (path === undefined) return undefined
+  const filePath = field(output, 'filePath')
+  if (filePath === undefined) return undefined
+  const path = drawable(filePath)
 
   let hunks = readHunks(output.structuredPatch)
   if (tool === 'Write' && output.type === 'create' && typeof output.content === 'string') {
     const lines = output.content.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n')
-    hunks = [{ oldStart: 0, oldLines: 0, newStart: 1, newLines: lines.length, lines: lines.map(line => `+${line}`) }]
+    hunks = [{ oldStart: 0, oldLines: 0, newStart: 1, newLines: lines.length, lines: lines.map(line => `+${drawable(line)}`) }]
   }
   if (hunks === undefined || hunks.length === 0) return undefined
 

@@ -1,12 +1,41 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { callStatus, editDiff, formatDuration, outputTail, shortPath, truncate } from '../hooks/transcript'
+import { callStatus, drawable, editDiff, formatDuration, outputTail, shortPath, truncate } from '../hooks/transcript'
 
 describe('text helpers', () => {
   test('truncate and shortPath', () => {
     expect(truncate('abcdef', 4)).toBe('abc…')
     expect(truncate('abc', 4)).toBe('abc')
     expect(shortPath('a.ts')).toBe('a.ts')
+  })
+})
+
+describe('drawable text', () => {
+  test('escape sequences go whole', () => {
+    expect(drawable('\x1b[31mFAIL\x1b[0m src/x.test.ts')).toBe('FAIL src/x.test.ts')
+    expect(drawable('\x1b[1;38;5;196mbold red\x1b[m')).toBe('bold red')
+    expect(drawable('\x1b]8;;https://x.dev\x07link\x1b]8;;\x07')).toBe('link')
+    expect(drawable('\x1b]8;;https://x.dev\x1b\\link\x1b]8;;\x1b\\')).toBe('link')
+  })
+
+  test('invisible and control characters dropped, tabs become spaces', () => {
+    expect(drawable('a\u202Eb\u200Bc\u00ADd')).toBe('abcd')
+    expect(drawable('\tx\r')).toBe('    x')
+    expect(drawable('bell\x07 nul\x00')).toBe('bell nul')
+    expect(drawable('añ 日本 ✓')).toBe('añ 日本 ✓')
+  })
+
+  test('applied to tails, diff lines and paths', () => {
+    expect(outputTail({ stderr: '\x1b[31mError: boom\x1b[0m\n' })).toEqual(['Error: boom'])
+    const diff = editDiff('Edit', {
+      filePath: '/r/a\u202E.ts',
+      structuredPatch: [{ oldStart: 1, oldLines: 1, newStart: 1, newLines: 1, lines: ['-\told\x1b[0m', '+new\r'] }],
+    })
+    expect(diff?.path).toBe('/r/a.ts')
+    expect(diff?.hunks).toBe('@@ -1,1 +1,1 @@\n-    old\n+new')
+    expect(shortPath('C:\\r\\hooks\\a\u200B.ts')).toBe('hooks/a.ts')
+    const created = editDiff('Write', { type: 'create', filePath: 'n.go', content: '\tx\n', structuredPatch: [] })
+    expect(created?.hunks).toBe('@@ -0,0 +1,1 @@\n+    x')
   })
 })
 
