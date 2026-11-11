@@ -3,6 +3,7 @@ export type KitModsContext = { tokens: number; window: number; percent: number }
 export type KitModsPlan = { slug: string; title: string; status: string; done: number; total: number; others: number };
 export type KitModsAgent = { type: string; isWorktree: boolean };
 export type KitModsBlast = { command: string; lines: string[] };
+export type KitModsTiming = { startedAt: number; endedAt?: number };
 
 declare module 'claude-code' {
   interface PluginState {
@@ -12,6 +13,8 @@ declare module 'claude-code' {
       plan: KitModsPlan | null;
       agents: KitModsAgent[];
       blast: KitModsBlast | null;
+      // One per tool call, by tool_use_id (a tool row's requestId).
+      timing: StateFamily<KitModsTiming>;
     };
   }
 }
