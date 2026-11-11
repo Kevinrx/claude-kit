@@ -155,3 +155,73 @@ test('an edit’s result block is a stat and a capped diff', async ($, on) => {
     }
   }
 })
+
+test('a failed command with coloured output still draws a clean tail', async ($, on) => {
+  engine(on)
+  await $.session.start(START)
+  const failed = '\x1b[31mFAIL\x1b[0m src/x.test.ts\n\x1b[1mError:\x1b[22m boom\t!'
+  for (const surface of SURFACES) {
+    const card = await $.ui.mount({
+      plugin: 'kit-mods',
+      surface,
+      ...group([call('Bash', { command: 'npx jest' }, { tool_use_id: 'c1', isErrored: true, output: failed })], true),
+    })
+    await card.unmount()
+    const bad = await $.ui.mount({ plugin: 'kit-mods', surface, ...row('c1', { tool: 'Bash', isErrored: true, output: failed }) })
+    expect(await bad.find({ type: 'Text', text: '✗' })).toBeDefined()
+    expect(await bad.find({ type: 'Text', text: /FAIL src\/x\.test\.ts/ })).toBeDefined()
+    expect(await bad.find({ type: 'Text', text: /Error: boom {4}!/ })).toBeDefined()
+    await bad.unmount()
+  }
+})
+
+test('the full view and VS Code keep the engine’s own edit block', async ($, on) => {
+  engine(on)
+  await $.session.start(START)
+  const result = (isExpanded?: boolean) =>
+    ({
+      component: 'ToolResult',
+      requestId: 'x1',
+      props: { tool_use_id: 'x1', tool: 'Edit', output: editOutput(['-old', '+new']), isErrored: false, ...(isExpanded === undefined ? {} : { isExpanded }) },
+    }) as const
+
+  for (const surface of SURFACES) {
+    const expanded = await $.ui.mount({ plugin: 'kit-mods', surface, ...result(true) })
+    expect(await expanded.find({ type: 'Text', text: 'engine result' })).toBeDefined()
+    expect(await expanded.find({ type: 'Code' })).toBe(undefined)
+    await expanded.unmount()
+
+    const folded = await $.ui.mount({ plugin: 'kit-mods', surface, ...result(false) })
+    expect(await folded.find({ type: 'Code' })).toBeDefined()
+    await folded.unmount()
+  }
+
+  const vscode = await $.ui.mount({ plugin: 'kit-mods', surface: 'vscode', ...result() })
+  expect(await vscode.find({ type: 'Text', text: 'engine result' })).toBeDefined()
+  expect(await vscode.find({ type: 'Code' })).toBe(undefined)
+  await vscode.unmount()
+})
+
+test('each row reads its own call’s timing', async ($, on) => {
+  const clock = engine(on)
+  on('tool.call', { tool: 'Bash' }, async ($, e) => {
+    await clock.advance(e.command === 'slow' ? 65_000 : 850)
+    return { result: { stdout: '', stderr: '', interrupted: false } }
+  })
+  await $.session.start(START)
+  await $.tool.call({ tool: 'Bash', tool_use_id: 'd1', command: 'fast' })
+  await $.tool.call({ tool: 'Bash', tool_use_id: 'd2', command: 'slow' })
+
+  for (const surface of SURFACES) {
+    const fast = await $.ui.mount({ plugin: 'kit-mods', surface, ...row('d1', { tool: 'Bash' }) })
+    expect(await fast.find({ type: 'Text', text: '850ms' })).toBeDefined()
+    await fast.unmount()
+    const slow = await $.ui.mount({ plugin: 'kit-mods', surface, ...row('d2', { tool: 'Bash' }) })
+    expect(await slow.find({ type: 'Text', text: '1m 05s' })).toBeDefined()
+    await slow.unmount()
+    const never = await $.ui.mount({ plugin: 'kit-mods', surface, ...row('d3', { tool: 'Bash' }) })
+    expect(await never.find({ type: 'Text', text: '✓' })).toBeDefined()
+    expect(await never.find({ type: 'Text', text: /\d(ms|s)$/ })).toBe(undefined)
+    await never.unmount()
+  }
+})
