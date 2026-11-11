@@ -3,9 +3,9 @@
 // Everything that touches `$` lives in this file: the engine only follows `$`
 // into functions declared here, so the other files hold pure logic.
 import type { EngineInterface, Register } from 'claude-code'
-import { update } from 'claude-code'
+import { memberOf } from 'claude-code'
 
-import type { KitModsAgent, KitModsLimit, KitModsTiming } from '../types'
+import type { KitModsAgent, KitModsLimit } from '../types'
 import type { Risk } from './blast'
 import { classify, cleanSummary, describeRisk, diffSummary, formatBytes, isUnmeasurable, joinPath, pushSummary } from './blast'
 import { MAX_RUNNING, spawnRefusal } from './delegation'
@@ -35,12 +35,13 @@ const LIMITS_STORE_KEY = 'limits'
 const planRef = { plugin: 'kit-mods', key: 'plan' } as const
 const agentsRef = { plugin: 'kit-mods', key: 'agents' } as const
 const blastRef = { plugin: 'kit-mods', key: 'blast' } as const
-const timingsRef = { plugin: 'kit-mods', key: 'timings' } as const
+const timingRef = { plugin: 'kit-mods', key: 'timing' } as const
 
 const MAX_WALK = 10_000
-// shortcut: keeps the newest 200 call timings, so rows of older calls in a long
-// session lose their duration. Upgrade: drop entries by age once groups scroll away.
-const MAX_TIMINGS = 200
+// shortcut: remembers the newest 500 grouped calls, so in a very long session the
+// rows of an older group, expanded again, lose their extra detail.
+// Upgrade if ToolUse ever says it's in a group.
+const MAX_GROUPED = 500
 const SHELLS = new Set(['Bash', 'PowerShell'])
 const STATUS_MARK: Record<CallStatus, { glyph: string; color: string }> = {
   ok: { glyph: '✓', color: 'green' },
@@ -60,9 +61,18 @@ const starting = new Map<string, KitModsAgent>()
 let savedLimits = ''
 // Calls some tool group holds, by tool_use_id: their rows add the detail a
 // standalone row's result block would show. A render hook can't write `$.state`.
-// shortcut: lost on a hot reload (grouped rows drop the diff and failed tail until
-// their group redraws) and never pruned; upgrade if ToolUse ever says it's grouped.
+// Lost on a hot reload: grouped rows drop the diff and failed tail until their
+// group redraws. Capped at MAX_GROUPED, oldest first.
 const groupedCalls = new Set<string>()
+
+function noteGrouped(id: string): void {
+  groupedCalls.delete(id)
+  groupedCalls.add(id)
+  for (const old of groupedCalls) {
+    if (groupedCalls.size <= MAX_GROUPED) break
+    groupedCalls.delete(old)
+  }
+}
 
 // Work after `next` only redraws the band: a failure there must never fail the
 // hook after the tool already ran, so it's dropped (the band is just stale).
@@ -201,16 +211,6 @@ async function withBlastRadius<T>($: EngineInterface, command: string, run: () =
   }
 }
 
-async function recordTiming($: EngineInterface, id: string, change: (timing: KitModsTiming | undefined, now: number) => KitModsTiming): Promise<void> {
-  const now = await $.clock.now()
-  await update($, timingsRef, timings => {
-    const next = { ...(timings ?? {}), [id]: change(timings?.[id], now) }
-    const ids = Object.keys(next)
-    for (const old of ids.slice(0, Math.max(0, ids.length - MAX_TIMINGS))) delete next[old]
-    return next
-  })
-}
-
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
@@ -273,20 +273,36 @@ export const register: Register = on => {
   on('tool.call', { tool: 'Bash' }, ($, e, next) => withBlastRadius($, e.command, () => next(e)))
   on('tool.call', { tool: 'PowerShell' }, ($, e, next) => withBlastRadius($, e.command, () => next(e)))
 
-  // When each call started and ended, for the durations a folded group draws.
+  // When each call started and ended, one family member per call, so a call's
+  // start or end redraws its own row alone.
+  // shortcut: members are never removed (the state API has no delete); each is two
+  // numbers. Upgrade: overwrite members older than the newest few hundred with a
+  // tombstone if a long session's memory ever matters.
   on('tool.call', async ($, e, next) => {
-    await quietly(recordTiming($, e.tool_use_id, (_, now) => ({ startedAt: now })))
+    const member = { ...timingRef, id: e.tool_use_id }
+    let startedAt: number | undefined
+    await quietly(
+      (async () => {
+        startedAt = await $.clock.now()
+        await $.state.set(member, { startedAt })
+      })(),
+    )
     try {
       return await next(e)
     } finally {
-      await quietly(recordTiming($, e.tool_use_id, (timing, now) => ({ startedAt: timing?.startedAt ?? now, endedAt: now })))
+      await quietly(
+        (async () => {
+          const endedAt = await $.clock.now()
+          await $.state.set(member, { startedAt: startedAt ?? endedAt, endedAt })
+        })(),
+      )
     }
   })
 
   // A folded group is the engine's own line. The group's calls are noted so their
   // rows, once the group is expanded, know they're in a card and add their detail.
   on('ui.render', { component: 'ToolGroup' }, async ($, e, next) => {
-    for (const call of e.props.calls) if (call.tool_use_id !== undefined) groupedCalls.add(call.tool_use_id)
+    for (const call of e.props.calls) if (call.tool_use_id !== undefined) noteGrouped(call.tool_use_id)
     return next(e)
   })
 
@@ -294,11 +310,10 @@ export const register: Register = on => {
   // In an expanded group, also a failed command's last lines and an edit's capped
   // diff; a standalone row has its own result block for those.
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
-    const [engine, { value: timings = {} }] = await Promise.all([next(e), $.state.get(timingsRef)])
+    const [engine, { value: timing }] = await Promise.all([next(e), $.state.get(memberOf(timingRef, e))])
     const { Box, Text, Code } = $.ui.resolve(e)
     const status = callStatus(e.props)
     const mark = STATUS_MARK[status]
-    const timing = timings[e.props.tool_use_id]
     const duration =
       status === 'running' ? 'running' : timing?.endedAt === undefined ? undefined : formatDuration(timing.endedAt - timing.startedAt)
     const isInGroup = groupedCalls.has(e.props.tool_use_id)
@@ -329,7 +344,10 @@ export const register: Register = on => {
   })
 
   // An edit's result block: `path  +N −M` and the diff capped to a screenful.
+  // The full view (ctrl+o, --verbose) keeps the engine's whole diff, and VS Code,
+  // whose Code draws no diff format, its own block.
   on('ui.render', { component: 'ToolResult' }, async ($, e, next) => {
+    if (e.props.isExpanded === true || e.surface === 'vscode') return next(e)
     const diff = e.props.isErrored ? undefined : editDiff(e.props.tool, e.props.output)
     if (diff === undefined) return next(e)
     const { Box, Text, Code } = $.ui.resolve(e)

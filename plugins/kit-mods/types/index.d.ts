@@ -13,7 +13,8 @@ declare module 'claude-code' {
       plan: KitModsPlan | null;
       agents: KitModsAgent[];
       blast: KitModsBlast | null;
-      timings: Record<string, KitModsTiming>;
+      // One per tool call, by tool_use_id (a tool row's requestId).
+      timing: StateFamily<KitModsTiming>;
     };
   }
 }
