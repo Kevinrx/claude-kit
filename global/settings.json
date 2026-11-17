@@ -4,6 +4,14 @@
     "pr": ""
   },
   "permissions": {
+    "allow": [
+      "Bash(npx -y modern-web-guidance@latest *)",
+      "Bash(npx.cmd -y modern-web-guidance@latest *)",
+      "Bash(pnpx modern-web-guidance@latest *)",
+      "PowerShell(npx -y modern-web-guidance@latest *)",
+      "PowerShell(npx.cmd -y modern-web-guidance@latest *)",
+      "PowerShell(pnpx modern-web-guidance@latest *)"
+    ],
     "deny": [
       "Read(**/.env)",
       "Read(**/.env.local)",
