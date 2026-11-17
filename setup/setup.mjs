@@ -128,6 +128,9 @@ function setupPlugins() {
   claude('plugin', 'install', `kit@${MARKETPLACE}`);
   claude('plugin', 'install', `kit-mods@${MARKETPLACE}`);
   for (const plugin of RECOMMENDED) claude('plugin', 'install', plugin);
+  // Google Chrome's web best-practice guides; its skill fetches them with `npx modern-web-guidance@latest`.
+  claude('plugin', 'marketplace', 'add', 'GoogleChrome/modern-web-guidance');
+  claude('plugin', 'install', 'modern-web-guidance@googlechrome');
   if (hasCommand('codex')) {
     claude('plugin', 'marketplace', 'add', 'openai/codex-plugin-cc');
     claude('plugin', 'install', 'codex@openai-codex');
