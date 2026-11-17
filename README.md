@@ -47,7 +47,7 @@ node setup/setup.mjs --dry-run   # see what it will change
 node setup/setup.mjs             # add --disable-omc / --disable-superpowers to turn those off too
 ```
 
-Setup points `~/.claude/CLAUDE.md` at `global/CLAUDE.md`, merges [`global/settings.json`](global/settings.json), adds this repo as the `claude-kit` marketplace and installs `kit` and `kit-mods` plus context7, typescript-lsp, ruby-lsp, frontend-design, code-review and codex (if the Codex CLI is installed). With `--disable-omc` or `--disable-superpowers`, it also turns off oh-my-claudecode or superpowers if either is installed and enabled — both ship their own plan/review workflows that compete with kit's. It backs up what it changes to `~/.claude/backups/`. Restart Claude Code afterwards.
+Setup points `~/.claude/CLAUDE.md` at `global/CLAUDE.md`, merges [`global/settings.json`](global/settings.json), adds this repo as the `claude-kit` marketplace and installs `kit` and `kit-mods` plus context7, typescript-lsp, ruby-lsp, frontend-design, code-review, Google Chrome's [modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) and codex (if the Codex CLI is installed). modern-web-guidance pulls its guides from npm at runtime; the settings pre-approve only `npx -y modern-web-guidance@latest …` (and its `npx.cmd`/`pnpx` forms), never bare `npx`. With `--disable-omc` or `--disable-superpowers`, it also turns off oh-my-claudecode or superpowers if either is installed and enabled — both ship their own plan/review workflows that compete with kit's. It backs up what it changes to `~/.claude/backups/`. Restart Claude Code afterwards.
 
 The LSP plugins need their servers: `npm i -g typescript-language-server typescript` and `gem install ruby-lsp`.
 
