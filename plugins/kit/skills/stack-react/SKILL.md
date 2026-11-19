@@ -27,6 +27,7 @@ paths:
 - Stable `key`s from data ids — not the array index for lists that reorder, insert or delete.
 - Memoize (`useMemo`, `useCallback`, `memo`) only for a measured problem or a memoized child that needs stable props.
 - Accessibility: semantic elements (`button`, not a clickable `div`), labels for inputs, alt text, focus handling in modals, keyboard access.
+- Web platform features (dialogs, popovers, forms, layout, animation, performance): with the `modern-web-guidance` skill available, retrieve the guides the plan lists (or search first) before writing, and adapt the vanilla pattern to React instead of adding a library.
 - Security: `dangerouslySetInnerHTML` only with sanitized content. Nothing secret in client code — every env var in the bundle is public.
 
 ## Tests
@@ -37,4 +38,4 @@ paths:
 
 ## Review checklist
 
-Stale closures · missing or extra effect dependencies · missing cleanup · state derived via effects · request races · unstable keys · unhandled loading/error/empty states · inaccessible controls · unsanitized HTML · secrets in the bundle · tests coupled to implementation details.
+Stale closures · missing or extra effect dependencies · missing cleanup · state derived via effects · request races · unstable keys · unhandled loading/error/empty states · inaccessible controls · unsanitized HTML · a library where a native platform feature fits · secrets in the bundle · tests coupled to implementation details.
