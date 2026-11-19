@@ -111,3 +111,18 @@ test('every plugin folder is listed in the marketplace and installed by setup', 
     assert.ok(setup.includes(`'${dir}@\${MARKETPLACE}'`) || setup.includes(`\`${dir}@\${MARKETPLACE}\``), `setup.mjs doesn't install ${dir}`);
   }
 });
+
+test('setup installs modern-web-guidance from its marketplace and the README says so', () => {
+  const setup = read(ROOT, 'setup', 'setup.mjs');
+  assert.ok(setup.includes(`'GoogleChrome/modern-web-guidance'`), "setup.mjs doesn't add the GoogleChrome/modern-web-guidance marketplace");
+  assert.ok(setup.includes(`'modern-web-guidance@googlechrome'`), "setup.mjs doesn't install modern-web-guidance@googlechrome");
+  assert.ok(read(ROOT, 'README.md').includes('modern-web-guidance'), "README.md doesn't mention modern-web-guidance");
+});
+
+test('global settings pre-approve the modern-web-guidance npx command and never bare npx', () => {
+  const allow = JSON.parse(read(ROOT, 'global', 'settings.json')).permissions?.allow ?? [];
+  assert.ok(allow.includes('Bash(npx -y modern-web-guidance@latest *)'), 'global/settings.json does not allow the modern-web-guidance npx command');
+  for (const rule of allow) {
+    assert.doesNotMatch(rule, /^(?:Bash|PowerShell)\((?:npx(?:\.cmd)?|pnpx|bunx)(?: -y)?(?:[ :]\*)?\)$/, `${rule} lets any npm package run without a prompt`);
+  }
+});
