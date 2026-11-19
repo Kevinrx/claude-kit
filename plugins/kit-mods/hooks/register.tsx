@@ -3,6 +3,7 @@
 // Everything that touches `$` lives in this file: the engine only follows `$`
 // into functions declared here, so the other files hold pure logic.
 import type { EngineInterface, Register } from 'claude-code'
+import { memberOf } from 'claude-code'
 
 import type { KitModsAgent, KitModsLimit } from '../types'
 import type { Risk } from './blast'
@@ -25,6 +26,8 @@ import {
 } from './limits'
 import type { ParsedPlan } from './plan'
 import { isProgressFile, parsePlan, pickActive, PLANS_DIR } from './plan'
+import type { CallStatus } from './transcript'
+import { callStatus, editDiff, formatDuration, outputTail, shortPath, truncate } from './transcript'
 
 const limitsRef = { plugin: 'kit-mods', key: 'limits' } as const
 const contextRef = { plugin: 'kit-mods', key: 'context' } as const
@@ -32,8 +35,20 @@ const LIMITS_STORE_KEY = 'limits'
 const planRef = { plugin: 'kit-mods', key: 'plan' } as const
 const agentsRef = { plugin: 'kit-mods', key: 'agents' } as const
 const blastRef = { plugin: 'kit-mods', key: 'blast' } as const
+const timingRef = { plugin: 'kit-mods', key: 'timing' } as const
 
 const MAX_WALK = 10_000
+// shortcut: remembers the newest 500 grouped calls, so in a very long session the
+// rows of an older group, expanded again, lose their extra detail.
+// Upgrade if ToolUse ever says it's in a group.
+const MAX_GROUPED = 500
+const SHELLS = new Set(['Bash', 'PowerShell'])
+const STATUS_MARK: Record<CallStatus, { glyph: string; color: string }> = {
+  ok: { glyph: '✓', color: 'green' },
+  error: { glyph: '✗', color: 'red' },
+  running: { glyph: '…', color: 'gray' },
+  interrupted: { glyph: '⊘', color: 'yellow' },
+}
 
 // Per Agent call, whether the model asked for a worktree: the Agent tool's
 // input carries `isolation`, the agent.spawn event that follows doesn't.
@@ -44,6 +59,20 @@ const isWorktreeByAgent = new Map<string, boolean>()
 const starting = new Map<string, KitModsAgent>()
 // The limits last written to `$.store`, so an unchanged reading isn't rewritten every minute.
 let savedLimits = ''
+// Calls some tool group holds, by tool_use_id: their rows add the detail a
+// standalone row's result block would show. A render hook can't write `$.state`.
+// Lost on a hot reload: grouped rows drop the diff and failed tail until their
+// group redraws. Capped at MAX_GROUPED, oldest first.
+const groupedCalls = new Set<string>()
+
+function noteGrouped(id: string): void {
+  groupedCalls.delete(id)
+  groupedCalls.add(id)
+  for (const old of groupedCalls) {
+    if (groupedCalls.size <= MAX_GROUPED) break
+    groupedCalls.delete(old)
+  }
+}
 
 // Work after `next` only redraws the band: a failure there must never fail the
 // hook after the tool already ran, so it's dropped (the band is just stale).
@@ -243,6 +272,97 @@ export const register: Register = on => {
 
   on('tool.call', { tool: 'Bash' }, ($, e, next) => withBlastRadius($, e.command, () => next(e)))
   on('tool.call', { tool: 'PowerShell' }, ($, e, next) => withBlastRadius($, e.command, () => next(e)))
+
+  // When each call started and ended, one family member per call, so a call's
+  // start or end redraws its own row alone.
+  // shortcut: members are never removed (the state API has no delete); each is two
+  // numbers. Upgrade: overwrite members older than the newest few hundred with a
+  // tombstone if a long session's memory ever matters.
+  on('tool.call', async ($, e, next) => {
+    const member = { ...timingRef, id: e.tool_use_id }
+    let startedAt: number | undefined
+    await quietly(
+      (async () => {
+        startedAt = await $.clock.now()
+        await $.state.set(member, { startedAt })
+      })(),
+    )
+    try {
+      return await next(e)
+    } finally {
+      await quietly(
+        (async () => {
+          const endedAt = await $.clock.now()
+          await $.state.set(member, { startedAt: startedAt ?? endedAt, endedAt })
+        })(),
+      )
+    }
+  })
+
+  // A folded group is the engine's own line. The group's calls are noted so their
+  // rows, once the group is expanded, know they're in a card and add their detail.
+  on('ui.render', { component: 'ToolGroup' }, async ($, e, next) => {
+    for (const call of e.props.calls) if (call.tool_use_id !== undefined) noteGrouped(call.tool_use_id)
+    return next(e)
+  })
+
+  // Every tool row: the engine's row with ✓/✗ and the call's duration beside it.
+  // In an expanded group, also a failed command's last lines and an edit's capped
+  // diff; a standalone row has its own result block for those.
+  on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
+    const [engine, { value: timing }] = await Promise.all([next(e), $.state.get(memberOf(timingRef, e))])
+    const { Box, Text, Code } = $.ui.resolve(e)
+    const status = callStatus(e.props)
+    const mark = STATUS_MARK[status]
+    const duration =
+      status === 'running' ? 'running' : timing?.endedAt === undefined ? undefined : formatDuration(timing.endedAt - timing.startedAt)
+    const isInGroup = groupedCalls.has(e.props.tool_use_id)
+    const tail = isInGroup && status === 'error' && SHELLS.has(e.props.tool) ? outputTail(e.props.output) : []
+    const diff = isInGroup && status === 'ok' ? editDiff(e.props.tool, e.props.output) : undefined
+    const columns = Math.max(20, (e.viewport?.columns ?? 100) - 6)
+
+    return (
+      <Box flexDirection="column">
+        <Box key="row" flexDirection="row" alignItems="center" columnGap={1}>
+          <Box flexGrow={1} flexShrink={1}>
+            {engine}
+          </Box>
+          <Text color={mark.color}>{mark.glyph}</Text>
+          {duration !== undefined && <Text dimColor>{duration}</Text>}
+        </Box>
+        {tail.map(line => (
+          <Text color="red" dimColor wrap="truncate-end">{`  ${truncate(line, columns)}`}</Text>
+        ))}
+        {diff !== undefined && (
+          <Box key="diff" flexDirection="column" paddingLeft={2}>
+            <Code source={diff.hunks} path={diff.path} format="diff" wrap="truncate-end" />
+            {diff.hiddenLines > 0 && <Text dimColor>{`… ${diff.hiddenLines} more lines`}</Text>}
+          </Box>
+        )}
+      </Box>
+    )
+  })
+
+  // An edit's result block: `path  +N −M` and the diff capped to a screenful.
+  // The full view (ctrl+o, --verbose) keeps the engine's whole diff, and VS Code,
+  // whose Code draws no diff format, its own block.
+  on('ui.render', { component: 'ToolResult' }, async ($, e, next) => {
+    if (e.props.isExpanded === true || e.surface === 'vscode') return next(e)
+    const diff = e.props.isErrored ? undefined : editDiff(e.props.tool, e.props.output)
+    if (diff === undefined) return next(e)
+    const { Box, Text, Code } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="column">
+        <Box flexDirection="row" columnGap={1}>
+          <Text>{shortPath(diff.path)}</Text>
+          <Text color="green">{`+${diff.added}`}</Text>
+          <Text color="red">{`−${diff.removed}`}</Text>
+        </Box>
+        <Code source={diff.hunks} path={diff.path} format="diff" wrap="truncate-end" />
+        {diff.hiddenLines > 0 && <Text dimColor>{`… ${diff.hiddenLines} more lines`}</Text>}
+      </Box>
+    )
+  })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
