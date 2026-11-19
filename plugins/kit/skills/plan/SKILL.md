@@ -22,6 +22,7 @@ Every command you put in the plan must be proven to exist — name where it come
 
 - GitHub issue → `gh issue view <n> --comments`; read linked PRs and code.
 - Verify each claim against the current code. Issues go stale — record what you confirmed and what was wrong.
+- Web UI or client-side JS work, with the `modern-web-guidance` skill available: run its `search` for each main capability (search only, no `retrieve`). Record the matching guide ids in **Verified facts** and let them decide **Approach** — a native platform feature over a new library, named in `rejected:`. `/kit:implement` retrieves those guides.
 - Features, or anything with unknowns: interview with `AskUserQuestion` in rounds until nothing material is open — approach, edge cases, UX, what's out of scope, and "how could this fail?". Don't ask what the code already answers. Skip the interview for a bug with a clear reproduction.
 
 ## 3. Write the plan
